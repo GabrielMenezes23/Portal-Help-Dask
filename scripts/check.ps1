@@ -13,10 +13,31 @@ Write-Host 'Executando testes, lint, typecheck e build...' -ForegroundColor Cyan
 & npm run quality
 if ($LASTEXITCODE -ne 0) { throw 'A validação encontrou erros.' }
 
+$migrationsPath = 'supabase/migrations'
+if (-not (Test-Path $migrationsPath)) {
+  throw "Diretório obrigatório ausente: $migrationsPath"
+}
+
+$requiredMigrationSuffixes = @(
+  'phase0_foundation.sql',
+  'phase1_monday_mirror.sql',
+  'final_helpdesk.sql',
+  'advisor_hardening.sql'
+)
+
+foreach ($suffix in $requiredMigrationSuffixes) {
+  $matches = @(Get-ChildItem -Path $migrationsPath -File -Filter "*_$suffix")
+
+  if ($matches.Count -eq 0) {
+    throw "Migration obrigatória ausente: *_$suffix"
+  }
+
+  if ($matches.Count -gt 1) {
+    throw "Mais de uma migration encontrada para *_$suffix"
+  }
+}
+
 $requiredFiles = @(
-  'supabase/migrations/20260804142700_phase0_foundation.sql',
-  'supabase/migrations/20260804154000_phase1_monday_mirror.sql',
-  'supabase/migrations/20260804170000_final_helpdesk.sql',
   'docs/FINAL_HOMOLOGATION.md',
   'docs/CUTOVER.md',
   'docs/MONDAY_WEBHOOK_SETUP.md'
