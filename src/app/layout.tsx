@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   },
   description: 'Portal oficial de chamados e atendimento da CAF TI.',
   icons: {
-    icon: '/branding/ti-symbol.svg',
-    shortcut: '/branding/ti-symbol.svg',
+    icon: '/branding/ti-favicon.svg',
+    shortcut: '/branding/ti-favicon.svg',
   },
   robots: {
     index: false,
