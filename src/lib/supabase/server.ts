@@ -3,8 +3,6 @@ import { cookies } from 'next/headers';
 
 import { readPublicEnv } from '@/lib/env/env';
 
-type CookieToSet = { name: string; value: string; options?: any };
-
 export async function createClient() {
   const cookieStore = await cookies();
   const { supabaseUrl, supabasePublishableKey } = readPublicEnv();
@@ -14,7 +12,7 @@ export async function createClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet: CookieToSet[]) {
+      setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
