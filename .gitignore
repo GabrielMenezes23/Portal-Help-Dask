@@ -33,3 +33,5 @@ Thumbs.db
 # Delivery artifacts
 *.zip
 package-output/
+
+next-env.d.ts
