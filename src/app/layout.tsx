@@ -10,6 +10,10 @@ export const metadata: Metadata = {
     template: '%s | CAF TI Helpdesk',
   },
   description: 'Portal oficial de chamados e atendimento da CAF TI.',
+  icons: {
+    icon: '/branding/ti-symbol.svg',
+    shortcut: '/branding/ti-symbol.svg',
+  },
   robots: {
     index: false,
     follow: false,
