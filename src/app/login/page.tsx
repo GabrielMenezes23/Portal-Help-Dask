@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 const errorMessages: Record<string, string> = {
   required: 'Preencha o e-mail e a senha.',
   invalid_credentials: 'E-mail ou senha inválidos.',
-  configuration: 'O ambiente ainda precisa ser conectado ao Supabase.',
+  configuration: 'O portal está temporariamente indisponível. Contate a TI.',
 };
 
 type LoginPageProps = {
@@ -43,18 +43,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <section className="login-story">
         <BrandMark />
         <div className="login-story__content">
-          <span className="phase-label">Sistema oficial · Produção</span>
-          <h1>Helpdesk profissional, seguro e independente do Google.</h1>
+          <h1>Helpdesk, canal oficial para acompanhamento de tickets.</h1>
           <p>
-            Chamados, comentários, anexos, SLA e auditoria funcionam diretamente no
-            Supabase. A integração com o Monday é executada no servidor e não
-            depende de Apps Script, Google Sheets ou Google Drive.
+            Chamados, comentários, anexos, SLA e auditoria, integrados ao Monday.
           </p>
 
           <div className="login-checks">
-            <span><b>01</b> Supabase com RLS desde o início</span>
-            <span><b>02</b> Papéis validados no servidor</span>
-            <span><b>03</b> Storage privado e auditoria completa</span>
+            <span><b>01</b> Abra e acompanhe chamados com mais organização</span>
+            <span><b>02</b> Visualize comentários, anexos e atualizações em um só lugar</span>
+            <span><b>03</b> Acompanhe status, histórico e SLA do atendimento</span>
           </div>
         </div>
         <small className="login-story__footer">
@@ -70,8 +67,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <h2>Acesso ao Helpdesk</h2>
               <p>
                 {isConfigured
-                  ? 'Entre com o usuário criado no Supabase Auth.'
-                  : 'Configure o arquivo .env.local antes do primeiro acesso.'}
+                  ? 'Entre com seu e-mail corporativo e senha.'
+                  : 'O portal está temporariamente indisponível.'}
               </p>
             </div>
           </div>
