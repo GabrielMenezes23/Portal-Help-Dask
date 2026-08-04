@@ -1,0 +1,35 @@
+{
+  "name": "caf-ti-helpdesk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CAF TI Helpdesk profissional completo, sem Google Apps Script ou Google Sheets.",
+  "engines": {
+    "node": ">=22.13.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/lib/auth/roles.test.ts src/lib/env/env.test.ts src/lib/env/server-env.test.ts src/lib/monday/domain.test.ts src/lib/monday/sync-workflow.test.ts src/lib/tickets/validation.test.ts src/lib/tickets/sla.test.ts src/lib/monday/write-model.test.ts src/lib/monday/webhook.test.ts src/lib/rate-limit.test.ts",
+    "quality": "npm run test && npm run lint && npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.3",
+    "@supabase/supabase-js": "2.110.8",
+    "next": "16.2.12",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.12",
+    "typescript": "6.0.3"
+  },
+  "type": "module"
+}
