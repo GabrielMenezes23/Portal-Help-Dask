@@ -3,8 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { getConfigurationStatus, readPublicEnv } from '@/lib/env/env';
 
-type CookieToSet = { name: string; value: string; options?: any };
-
 export async function updateSession(request: NextRequest) {
   const status = getConfigurationStatus();
 
@@ -26,7 +24,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: CookieToSet[]) {
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
           });
