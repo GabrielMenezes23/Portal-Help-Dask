@@ -57,7 +57,8 @@ export function parseDropdownSettings(settings: unknown): OpeningResponsibleOpti
   const parsed = parseSettings(settings);
   if (!parsed) return [];
 
-  const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenLabels = new Set<string>();
   return extractLabelEntries(parsed.labels)
     .map(({ id, label }) => ({
       id,
@@ -65,10 +66,17 @@ export function parseDropdownSettings(settings: unknown): OpeningResponsibleOpti
       normalizedLabel: normalizeResponsibleLabel(label),
     }))
     .filter((option) => {
-      if (!option.id || !option.label || !option.normalizedLabel || seen.has(option.normalizedLabel)) {
+      if (
+        !option.id ||
+        !option.label ||
+        !option.normalizedLabel ||
+        seenIds.has(option.id) ||
+        seenLabels.has(option.normalizedLabel)
+      ) {
         return false;
       }
-      seen.add(option.normalizedLabel);
+      seenIds.add(option.id);
+      seenLabels.add(option.normalizedLabel);
       return true;
     })
     .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'));
