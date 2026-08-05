@@ -1,50 +1,15 @@
 import 'server-only';
 
-import { createAdminClient } from '@/lib/supabase/admin';
 import { readMondayEnv } from '@/lib/env/server-env';
+import { createAdminClient } from '@/lib/supabase/admin';
+
 import { mondayRequest } from './client';
+import {
+  parseDropdownSettings,
+  type OpeningResponsibleOption,
+} from './dropdown-options-domain';
 
 export const OPENING_RESPONSIBLE_COLUMN_ID = 'dropdown_mky7rgr1';
-
-export type OpeningResponsibleOption = {
-  id: string;
-  label: string;
-  normalizedLabel: string;
-};
-
-export function normalizeResponsibleLabel(value: unknown): string {
-  return String(value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-}
-
-export function parseDropdownSettings(settingsString: string): OpeningResponsibleOption[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(settingsString || '{}');
-  } catch {
-    return [];
-  }
-  if (!parsed || typeof parsed !== 'object') return [];
-  const labels = (parsed as { labels?: unknown }).labels;
-  if (!labels || typeof labels !== 'object' || Array.isArray(labels)) return [];
-
-  const seen = new Set<string>();
-  return Object.entries(labels as Record<string, unknown>)
-    .map(([id, rawLabel]) => {
-      const label = String(rawLabel ?? '').replace(/\s+/g, ' ').trim();
-      return { id, label, normalizedLabel: normalizeResponsibleLabel(label) };
-    })
-    .filter((option) => {
-      if (!option.label || !option.normalizedLabel || seen.has(option.normalizedLabel)) return false;
-      seen.add(option.normalizedLabel);
-      return true;
-    })
-    .sort((left, right) => left.label.localeCompare(right.label, 'pt-BR'));
-}
 
 const BOARD_COLUMN_QUERY = `
   query OpeningResponsibleColumn($boardIds: [ID!]!, $columnIds: [String!]) {
@@ -77,6 +42,13 @@ export async function syncOpeningResponsibleOptions(): Promise<{ active: number 
   const supabase = createAdminClient();
   const now = new Date().toISOString();
 
+  const { data: existing, error: existingError } = await supabase
+    .from('monday_dropdown_options')
+    .select('option_id')
+    .eq('board_id', boardId)
+    .eq('column_id', OPENING_RESPONSIBLE_COLUMN_ID);
+  if (existingError) throw new Error(`Falha ao ler responsáveis atuais: ${existingError.message}`);
+
   const { error: upsertError } = await supabase.from('monday_dropdown_options').upsert(
     options.map((option) => ({
       board_id: boardId,
@@ -93,14 +65,21 @@ export async function syncOpeningResponsibleOptions(): Promise<{ active: number 
   );
   if (upsertError) throw new Error(`Falha ao salvar responsáveis: ${upsertError.message}`);
 
-  const activeIds = options.map((option) => option.id);
-  const deactivate = await supabase
-    .from('monday_dropdown_options')
-    .update({ is_active: false, synced_at: now })
-    .eq('board_id', boardId)
-    .eq('column_id', OPENING_RESPONSIBLE_COLUMN_ID)
-    .not('option_id', 'in', `(${activeIds.map((id) => `"${id.replaceAll('"', '')}"`).join(',')})`);
-  if (deactivate.error) throw new Error(`Falha ao desativar responsáveis removidos: ${deactivate.error.message}`);
+  const activeIds = new Set(options.map((option) => option.id));
+  const missingIds = (existing || [])
+    .map((row) => String(row.option_id))
+    .filter((id) => !activeIds.has(id));
+  if (missingIds.length > 0) {
+    const deactivate = await supabase
+      .from('monday_dropdown_options')
+      .update({ is_active: false, synced_at: now })
+      .eq('board_id', boardId)
+      .eq('column_id', OPENING_RESPONSIBLE_COLUMN_ID)
+      .in('option_id', missingIds);
+    if (deactivate.error) {
+      throw new Error(`Falha ao desativar responsáveis removidos: ${deactivate.error.message}`);
+    }
+  }
 
   return { active: options.length };
 }
@@ -121,12 +100,4 @@ export async function listOpeningResponsibleOptions(): Promise<OpeningResponsibl
     label: String(row.option_label),
     normalizedLabel: String(row.normalized_label),
   }));
-}
-
-export function findExactResponsibleMatch(
-  requesterName: string,
-  options: OpeningResponsibleOption[],
-): OpeningResponsibleOption | null {
-  const normalized = normalizeResponsibleLabel(requesterName);
-  return options.find((option) => option.normalizedLabel === normalized) || null;
 }
