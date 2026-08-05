@@ -11,7 +11,7 @@ test('normalizes accents, spacing and case', () => {
   assert.equal(normalizeResponsibleLabel('  João   da SILVA '), 'joao da silva');
 });
 
-test('parses and de-duplicates dropdown labels', () => {
+test('parses and de-duplicates legacy dropdown labels', () => {
   const options = parseDropdownSettings(JSON.stringify({
     labels: {
       '1': 'Ana Souza',
@@ -20,6 +20,25 @@ test('parses and de-duplicates dropdown labels', () => {
       '4': '',
     },
   }));
+
+  assert.deepEqual(
+    options.map((option) => ({ id: option.id, label: option.label })),
+    [
+      { id: '1', label: 'Ana Souza' },
+      { id: '2', label: 'João da Silva' },
+    ],
+  );
+});
+
+test('parses current typed dropdown settings and ignores deactivated labels', () => {
+  const options = parseDropdownSettings({
+    labels: [
+      { id: 1, label: 'Ana Souza', is_deactivated: false },
+      { id: 2, label: ' João da Silva ', is_deactivated: false },
+      { id: 3, label: 'Nome antigo', is_deactivated: true },
+      { id: 4, label: '' },
+    ],
+  });
 
   assert.deepEqual(
     options.map((option) => ({ id: option.id, label: option.label })),
