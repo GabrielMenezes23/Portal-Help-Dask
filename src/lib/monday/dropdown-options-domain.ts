@@ -13,25 +13,61 @@ export function normalizeResponsibleLabel(value: unknown): string {
     .toLowerCase();
 }
 
-export function parseDropdownSettings(settingsString: string): OpeningResponsibleOption[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(settingsString || '{}');
-  } catch {
-    return [];
+function parseSettings(value: unknown): Record<string, unknown> | null {
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value || '{}');
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? parsed as Record<string, unknown>
+        : null;
+    } catch {
+      return null;
+    }
   }
-  if (!parsed || typeof parsed !== 'object') return [];
-  const labels = (parsed as { labels?: unknown }).labels;
-  if (!labels || typeof labels !== 'object' || Array.isArray(labels)) return [];
+
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function extractLabelEntries(labels: unknown): Array<{ id: string; label: string }> {
+  if (Array.isArray(labels)) {
+    return labels.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
+      const record = entry as Record<string, unknown>;
+      if (record.is_deactivated === true || record.isDeactivated === true) return [];
+      return [{
+        id: String(record.id ?? '').trim(),
+        label: String(record.label ?? record.name ?? '').replace(/\s+/g, ' ').trim(),
+      }];
+    });
+  }
+
+  if (labels && typeof labels === 'object') {
+    return Object.entries(labels as Record<string, unknown>).map(([id, rawLabel]) => ({
+      id,
+      label: String(rawLabel ?? '').replace(/\s+/g, ' ').trim(),
+    }));
+  }
+
+  return [];
+}
+
+export function parseDropdownSettings(settings: unknown): OpeningResponsibleOption[] {
+  const parsed = parseSettings(settings);
+  if (!parsed) return [];
 
   const seen = new Set<string>();
-  return Object.entries(labels as Record<string, unknown>)
-    .map(([id, rawLabel]) => {
-      const label = String(rawLabel ?? '').replace(/\s+/g, ' ').trim();
-      return { id, label, normalizedLabel: normalizeResponsibleLabel(label) };
-    })
+  return extractLabelEntries(parsed.labels)
+    .map(({ id, label }) => ({
+      id,
+      label,
+      normalizedLabel: normalizeResponsibleLabel(label),
+    }))
     .filter((option) => {
-      if (!option.label || !option.normalizedLabel || seen.has(option.normalizedLabel)) return false;
+      if (!option.id || !option.label || !option.normalizedLabel || seen.has(option.normalizedLabel)) {
+        return false;
+      }
       seen.add(option.normalizedLabel);
       return true;
     })
