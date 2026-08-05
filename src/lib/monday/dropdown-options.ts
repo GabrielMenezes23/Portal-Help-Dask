@@ -84,8 +84,7 @@ export async function syncOpeningResponsibleOptions(): Promise<{ active: number 
   return { active: options.length };
 }
 
-export async function listOpeningResponsibleOptions(): Promise<OpeningResponsibleOption[]> {
-  const { boardId } = readMondayEnv();
+async function readCachedOptions(boardId: string): Promise<OpeningResponsibleOption[]> {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('monday_dropdown_options')
@@ -100,4 +99,20 @@ export async function listOpeningResponsibleOptions(): Promise<OpeningResponsibl
     label: String(row.option_label),
     normalizedLabel: String(row.normalized_label),
   }));
+}
+
+export async function listOpeningResponsibleOptions(): Promise<OpeningResponsibleOption[]> {
+  const { boardId } = readMondayEnv();
+  const cached = await readCachedOptions(boardId);
+  if (cached.length > 0) return cached;
+
+  try {
+    await syncOpeningResponsibleOptions();
+  } catch (cause) {
+    console.error('Não foi possível inicializar a lista de responsáveis.', {
+      message: cause instanceof Error ? cause.message : String(cause),
+    });
+  }
+
+  return readCachedOptions(boardId);
 }
