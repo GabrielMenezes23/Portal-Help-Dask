@@ -8,6 +8,7 @@ import {
   parseDropdownSettings,
   type OpeningResponsibleOption,
 } from './dropdown-options-domain';
+import { ensureMondayWebhooks } from './webhook-config';
 
 export const OPENING_RESPONSIBLE_COLUMN_ID = 'dropdown_mky7rgr1';
 
@@ -108,6 +109,13 @@ export async function listOpeningResponsibleOptions(): Promise<OpeningResponsibl
 
   try {
     await syncOpeningResponsibleOptions();
+    try {
+      await ensureMondayWebhooks();
+    } catch (cause) {
+      console.error('A lista foi carregada, mas os webhooks ainda não puderam ser registrados.', {
+        message: cause instanceof Error ? cause.message : String(cause),
+      });
+    }
   } catch (cause) {
     console.error('Não foi possível inicializar a lista de responsáveis.', {
       message: cause instanceof Error ? cause.message : String(cause),
