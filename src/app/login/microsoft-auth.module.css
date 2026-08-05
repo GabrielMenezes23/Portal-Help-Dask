@@ -1,0 +1,72 @@
+.microsoftForm {
+  margin-top: 30px;
+}
+
+.microsoftButton {
+  min-height: 52px;
+  gap: 12px;
+  color: #111827;
+  background: #ffffff;
+  border-color: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+}
+
+.microsoftButton:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.microsoftMark {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 2px;
+}
+
+.microsoftMark i:nth-child(1) { background: #f25022; }
+.microsoftMark i:nth-child(2) { background: #7fba00; }
+.microsoftMark i:nth-child(3) { background: #00a4ef; }
+.microsoftMark i:nth-child(4) { background: #ffb900; }
+
+.divider {
+  margin: 24px 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+}
+
+.passwordLogin {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(5, 9, 20, 0.34);
+}
+
+.passwordLogin summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--muted-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.passwordLogin[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.passwordLogin form {
+  margin-top: 0;
+  padding: 14px 16px 18px;
+}
