@@ -53,7 +53,7 @@ test('de-duplicates current dropdown options by id and normalized label', () => 
   const options = parseDropdownSettings({
     labels: [
       { id: 1, label: 'Ana Souza', is_deactivated: false },
-      { id: 1, label: 'Ana Souza', is_deactivated: false },
+      { id: 1, label: 'Ana S. Souza', is_deactivated: false },
       { id: 2, label: ' João   da Silva ', is_deactivated: false },
       { id: 3, label: 'joão da silva', is_deactivated: false },
     ],
