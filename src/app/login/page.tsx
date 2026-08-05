@@ -6,6 +6,7 @@ import { getConfigurationStatus } from '@/lib/env/env';
 import { createClient } from '@/lib/supabase/server';
 
 import { login, loginWithMicrosoft } from './actions';
+import styles from './microsoft-auth.module.css';
 
 export const metadata: Metadata = { title: 'Entrar' };
 export const dynamic = 'force-dynamic';
@@ -79,20 +80,24 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {error && <div className="form-alert" role="alert">{error}</div>}
 
-          <form action={loginWithMicrosoft} className="microsoft-auth-form">
-            <button className="button button--microsoft button--full" type="submit" disabled={!isConfigured}>
-              <span className="microsoft-mark" aria-hidden="true">
+          <form action={loginWithMicrosoft} className={styles.microsoftForm}>
+            <button
+              className={`button button--full ${styles.microsoftButton}`}
+              type="submit"
+              disabled={!isConfigured}
+            >
+              <span className={styles.microsoftMark} aria-hidden="true">
                 <i /><i /><i /><i />
               </span>
               Entrar com Microsoft 365
             </button>
           </form>
 
-          <div className="auth-divider" role="separator">
+          <div className={styles.divider} role="separator">
             <span>Acesso administrativo alternativo</span>
           </div>
 
-          <details className="password-login">
+          <details className={styles.passwordLogin}>
             <summary>Entrar com e-mail e senha</summary>
             <form action={login} className="auth-form">
               <label htmlFor="email">E-mail corporativo</label>
