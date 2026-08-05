@@ -5,7 +5,8 @@ import { BrandMark } from '@/components/brand-mark';
 import { getConfigurationStatus } from '@/lib/env/env';
 import { createClient } from '@/lib/supabase/server';
 
-import { login } from './actions';
+import { login, loginWithMicrosoft } from './actions';
+import styles from './microsoft-auth.module.css';
 
 export const metadata: Metadata = { title: 'Entrar' };
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,10 @@ const errorMessages: Record<string, string> = {
   required: 'Preencha o e-mail e a senha.',
   invalid_credentials: 'E-mail ou senha inválidos.',
   configuration: 'O portal está temporariamente indisponível. Contate a TI.',
+  microsoft_unavailable: 'O login Microsoft 365 está temporariamente indisponível.',
+  microsoft_cancelled: 'O login Microsoft 365 foi cancelado.',
+  microsoft_callback: 'Não foi possível concluir o login Microsoft 365.',
+  unauthorized_domain: 'Use uma conta corporativa autorizada pela CAF Máquinas.',
 };
 
 type LoginPageProps = {
@@ -67,7 +72,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <h2>Acesso ao Helpdesk</h2>
               <p>
                 {isConfigured
-                  ? 'Entre com seu e-mail corporativo e senha.'
+                  ? 'Entre com sua conta corporativa Microsoft 365.'
                   : 'O portal está temporariamente indisponível.'}
               </p>
             </div>
@@ -75,37 +80,57 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {error && <div className="form-alert" role="alert">{error}</div>}
 
-          <form action={login} className="auth-form">
-            <label htmlFor="email">E-mail corporativo</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="nome@cafmaquinas.com.br"
-              required
+          <form action={loginWithMicrosoft} className={styles.microsoftForm}>
+            <button
+              className={`button button--full ${styles.microsoftButton}`}
+              type="submit"
               disabled={!isConfigured}
-            />
-
-            <label htmlFor="password">Senha</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="••••••••"
-              required
-              disabled={!isConfigured}
-            />
-
-            <button className="button button--primary button--full" type="submit" disabled={!isConfigured}>
-              Entrar com segurança
+            >
+              <span className={styles.microsoftMark} aria-hidden="true">
+                <i /><i /><i /><i />
+              </span>
+              Entrar com Microsoft 365
             </button>
           </form>
 
+          <div className={styles.divider} role="separator">
+            <span>Acesso administrativo alternativo</span>
+          </div>
+
+          <details className={styles.passwordLogin}>
+            <summary>Entrar com e-mail e senha</summary>
+            <form action={login} className="auth-form">
+              <label htmlFor="email">E-mail corporativo</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="nome@cafmaquinas.com.br"
+                required
+                disabled={!isConfigured}
+              />
+
+              <label htmlFor="password">Senha</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                required
+                disabled={!isConfigured}
+              />
+
+              <button className="button button--ghost button--full" type="submit" disabled={!isConfigured}>
+                Entrar com senha
+              </button>
+            </form>
+          </details>
+
           <div className="login-card__note">
-            <strong>Cadastros são controlados pela TI.</strong>
-            <span>Não existe auto cadastro público.</span>
+            <strong>Cada colaborador visualiza somente os próprios chamados.</strong>
+            <span>Os acessos da equipe de TI são controlados por perfil administrativo.</span>
           </div>
         </div>
       </section>
