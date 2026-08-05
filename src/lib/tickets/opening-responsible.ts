@@ -5,8 +5,8 @@ import { mondayRequest } from '@/lib/monday/client';
 import {
   OPENING_RESPONSIBLE_COLUMN_ID,
   listOpeningResponsibleOptions,
-  normalizeResponsibleLabel,
 } from '@/lib/monday/dropdown-options';
+import { normalizeResponsibleLabel } from '@/lib/monday/dropdown-options-domain';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 const CHANGE_COLUMN_MUTATION = `
