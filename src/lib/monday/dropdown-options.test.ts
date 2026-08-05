@@ -5,7 +5,7 @@ import {
   findExactResponsibleMatch,
   normalizeResponsibleLabel,
   parseDropdownSettings,
-} from './dropdown-options.ts';
+} from './dropdown-options-domain.ts';
 
 test('normalizes accents, spacing and case', () => {
   assert.equal(normalizeResponsibleLabel('  João   da SILVA '), 'joao da silva');
