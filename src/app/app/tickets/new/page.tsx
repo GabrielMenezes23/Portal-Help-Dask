@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { AppShell } from '@/components/app-shell';
 import { NewTicketForm } from '@/components/new-ticket-form';
 import { requireActiveUser } from '@/lib/auth/current-user';
+import { listOpeningResponsibleOptions } from '@/lib/monday/dropdown-options';
 
 export const metadata: Metadata = { title: 'Novo chamado' };
 export const dynamic = 'force-dynamic';
@@ -10,6 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function NewTicketPage() {
   const { profile } = await requireActiveUser();
   const requesterName = profile.fullName || profile.email.split('@')[0];
+  const responsibleOptions = await listOpeningResponsibleOptions();
 
   return (
     <AppShell
@@ -34,6 +36,10 @@ export default async function NewTicketPage() {
         <NewTicketForm
           requesterEmail={profile.email}
           requesterName={requesterName}
+          responsibleOptions={responsibleOptions.map((option) => ({
+            id: option.id,
+            label: option.label,
+          }))}
         />
       </section>
     </AppShell>

@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 import { fetchMondayItemSnapshot } from './client';
 import { MondaySyncRepository } from './repository';
+import { syncMondayItemUpdates } from './update-sync';
 import type { ParsedMondayWebhook } from './webhook';
 import { isRemovalEvent, shouldRetryWebhookStatus } from './webhook';
 
@@ -128,11 +129,12 @@ export async function processMondayWebhookEvent(
     );
     const snapshot = await fetchMondayItemSnapshot(event.itemId);
     const persisted = await repository.persistSnapshot(runId, snapshot);
+    const updates = await syncMondayItemUpdates(event.itemId);
     const result = {
       runId,
       itemsReceived: snapshot.items.length,
       ticketsUpserted: persisted.ticketsUpserted,
-      attachmentsUpserted: persisted.attachmentsUpserted,
+      attachmentsUpserted: persisted.attachmentsUpserted + updates.attachments,
       ticketsDeactivated: 0,
       attachmentsDeactivated: 0,
       ticketIds: persisted.ticketIds,
@@ -148,7 +150,11 @@ export async function processMondayWebhookEvent(
       })
       .eq('id', webhookId);
     if (completed.error) throw new Error(completed.error.message);
-    return { status: 'processed' as const, operation: 'upsert' as const };
+    return {
+      status: 'processed' as const,
+      operation: 'upsert' as const,
+      commentsUpserted: updates.comments,
+    };
   } catch (cause) {
     const error = cause instanceof Error ? cause : new Error(String(cause));
     if (runId) await new MondaySyncRepository(supabase).failRun(runId, error);

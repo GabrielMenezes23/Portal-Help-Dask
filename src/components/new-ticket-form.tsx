@@ -20,13 +20,37 @@ const serviceTypes = [
   'Outros',
 ];
 
+type ResponsibleOption = { id: string; label: string };
+
 type NewTicketFormProps = {
   requesterEmail: string;
   requesterName: string;
+  responsibleOptions: ResponsibleOption[];
 };
 
-export function NewTicketForm({ requesterEmail, requesterName }: NewTicketFormProps) {
+function normalizeName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+export function NewTicketForm({
+  requesterEmail,
+  requesterName,
+  responsibleOptions,
+}: NewTicketFormProps) {
   const router = useRouter();
+  const automaticResponsible = useMemo(
+    () =>
+      responsibleOptions.find(
+        (option) => normalizeName(option.label) === normalizeName(requesterName),
+      ) || null,
+    [requesterName, responsibleOptions],
+  );
+  const [responsibleId, setResponsibleId] = useState(automaticResponsible?.id || '');
   const [priority, setPriority] = useState('medium');
   const [requestType, setRequestType] = useState('');
   const [serviceType, setServiceType] = useState('');
@@ -34,6 +58,10 @@ export function NewTicketForm({ requesterEmail, requesterName }: NewTicketFormPr
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  const selectedResponsible = responsibleOptions.find(
+    (option) => option.id === responsibleId,
+  );
 
   const normalizedRequestType = useMemo(() => {
     if (requestType !== 'Requisição de serviço') return requestType;
@@ -47,6 +75,8 @@ export function NewTicketForm({ requesterEmail, requesterName }: NewTicketFormPr
 
     const form = new FormData(event.currentTarget);
     form.set('requestType', normalizedRequestType);
+    form.set('openingResponsibleOptionId', responsibleId);
+    form.set('openingResponsibleName', selectedResponsible?.label || '');
 
     const response = await fetch('/api/tickets', { method: 'POST', body: form });
     const result = await response.json();
@@ -122,8 +152,22 @@ export function NewTicketForm({ requesterEmail, requesterName }: NewTicketFormPr
         </div>
 
         <div className={`${styles.field} ${styles.fieldFull}`}>
-          <label htmlFor="requesterName">Responsável pela abertura</label>
-          <input id="requesterName" className={styles.input} value={requesterName} readOnly />
+          <label htmlFor="openingResponsible">Responsável pela abertura <span className={styles.required}>*</span></label>
+          <select
+            id="openingResponsible"
+            className={styles.select}
+            value={responsibleId}
+            onChange={(event) => setResponsibleId(event.target.value)}
+            required
+          >
+            <option value="" disabled>Selecione o responsável</option>
+            {responsibleOptions.map((option) => (
+              <option key={option.id} value={option.id}>{option.label}</option>
+            ))}
+          </select>
+          <small>
+            A lista é sincronizada com o Monday. O nome da sua conta é selecionado automaticamente quando houver correspondência exata.
+          </small>
         </div>
 
         <div className={`${styles.field} ${styles.fieldFull}`}>
