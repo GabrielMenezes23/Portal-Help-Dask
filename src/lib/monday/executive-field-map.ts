@@ -1,4 +1,19 @@
-import { normalizeSchemaText, type MondaySchemaColumnRecord } from './schema-domain.ts';
+type ExecutiveColumn = {
+  id: string;
+  title: string;
+  type: string;
+  semanticHint?: string;
+};
+
+function normalizeSchemaText(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export const EXECUTIVE_EXCEL_FIELDS = [
   'Nome',
@@ -121,14 +136,14 @@ export type ExecutiveFieldMapping = {
   candidates: Array<{ id: string; title: string; type: string }>;
 };
 
-function compatible(column: MondaySchemaColumnRecord, definition: FieldDefinition): boolean {
+function compatible(column: ExecutiveColumn, definition: FieldDefinition): boolean {
   if (definition.expectedSemantic && column.semanticHint !== definition.expectedSemantic) return false;
   if (definition.expectedType?.length && !definition.expectedType.includes(column.type)) return false;
   return true;
 }
 
 export function buildExecutiveFieldMap(
-  columns: MondaySchemaColumnRecord[],
+  columns: ExecutiveColumn[],
 ): ExecutiveFieldMapping[] {
   return FIELD_DEFINITIONS.map((definition, excelIndex) => {
     if (definition.knownColumnId) {
