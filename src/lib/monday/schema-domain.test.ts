@@ -6,6 +6,7 @@ import {
   classifySemanticHint,
   normalizeSchemaText,
   parseBoardRelationTargets,
+  selectDirectSchemaBoardIds,
   type MondaySchemaBoard,
   type MondaySchemaColumn,
 } from './schema-domain.ts';
@@ -61,6 +62,38 @@ test('não interpreta relações em coluna de outro tipo', () => {
   assert.deepEqual(
     parseBoardRelationTargets(column({ type: 'text', settings: { boardIds: [123] } })),
     [],
+  );
+});
+
+test('mantém apenas o board Tickets e destinos ligados diretamente a ele', () => {
+  assert.deepEqual(
+    selectDirectSchemaBoardIds('18389222247', [
+      {
+        sourceBoardId: '18389222247',
+        sourceColumnId: 'connect_a',
+        targetBoardId: '200',
+        relationType: 'board_relation',
+      },
+      {
+        sourceBoardId: '200',
+        sourceColumnId: 'connect_b',
+        targetBoardId: '300',
+        relationType: 'board_relation',
+      },
+      {
+        sourceBoardId: '999',
+        sourceColumnId: 'connect_c',
+        targetBoardId: '400',
+        relationType: 'board_relation',
+      },
+      {
+        sourceBoardId: '18389222247',
+        sourceColumnId: 'connect_d',
+        targetBoardId: '200',
+        relationType: 'board_relation',
+      },
+    ]),
+    ['18389222247', '200'],
   );
 });
 
