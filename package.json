@@ -13,7 +13,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/auth/roles.test.ts src/lib/auth/microsoft-auth.test.ts src/lib/env/env.test.ts src/lib/env/server-env.test.ts src/lib/monday/domain.test.ts src/lib/monday/sync-workflow.test.ts src/lib/monday/dropdown-options.test.ts src/lib/monday/update-domain.test.ts src/lib/tickets/validation.test.ts src/lib/tickets/sla.test.ts src/lib/monday/write-model.test.ts src/lib/monday/webhook.test.ts src/lib/rate-limit.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/auth/roles.test.ts src/lib/auth/microsoft-auth.test.ts src/lib/env/env.test.ts src/lib/env/server-env.test.ts src/lib/monday/domain.test.ts src/lib/monday/sync-workflow.test.ts src/lib/monday/dropdown-options.test.ts src/lib/monday/update-domain.test.ts src/lib/monday/schema-domain.test.ts src/lib/tickets/validation.test.ts src/lib/tickets/sla.test.ts src/lib/monday/write-model.test.ts src/lib/monday/webhook.test.ts src/lib/rate-limit.test.ts",
     "quality": "npm run test && npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
