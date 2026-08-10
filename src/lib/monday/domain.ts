@@ -230,11 +230,25 @@ function columnText(
   const parsed = column ? parseColumnValue(column) : null;
   if (parsed && typeof parsed === 'object') {
     const record = parsed as Record<string, unknown>;
-    const fallback = record.text ?? record.email ?? record.date ?? record.url;
+    const fallback = record.text ?? record.email ?? record.date;
     if (typeof fallback === 'string') return fallback.trim();
   }
 
   return '';
+}
+
+function columnUrl(
+  columns: Map<string, MondayColumnValue>,
+  id: string,
+): string {
+  const column = columns.get(id);
+  const parsed = column ? parseColumnValue(column) : null;
+  if (parsed && typeof parsed === 'object') {
+    const url = (parsed as Record<string, unknown>).url;
+    if (typeof url === 'string' && url.trim()) return url.trim();
+  }
+  const direct = String(column?.text ?? '').trim();
+  return /^https?:\/\//i.test(direct) ? direct : '';
 }
 
 function columnDuration(
@@ -340,7 +354,7 @@ export function mapMondayItem(
       tags_raw: tagsRaw,
       tags: splitTags(tagsRaw),
       supplier_ticket: columnText(columns, MONDAY_COLUMN_IDS.supplierTicket),
-      supplier_link: columnText(columns, MONDAY_COLUMN_IDS.supplierLink),
+      supplier_link: columnUrl(columns, MONDAY_COLUMN_IDS.supplierLink),
       work_time_seconds: columnDuration(columns, MONDAY_COLUMN_IDS.workTime),
       open_time_seconds: columnDuration(columns, MONDAY_COLUMN_IDS.openTime),
       hardware_issue: columnText(columns, MONDAY_COLUMN_IDS.hardwareIssue),
