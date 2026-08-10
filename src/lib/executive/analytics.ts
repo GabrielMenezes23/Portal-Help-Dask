@@ -67,6 +67,28 @@ function durationSeconds(ticket: ExecutiveTicketInput): number | null {
   return Math.round((resolved - opened) / 1000);
 }
 
+function calendarDateInSaoPaulo(value: string | null): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = parts.find((part) => part.type === 'day')?.value;
+  return year && month && day ? `${year}-${month}-${day}` : null;
+}
+
+function resolvedSameCalendarDay(ticket: ExecutiveTicketInput): boolean {
+  const opened = calendarDateInSaoPaulo(ticket.openedAt);
+  const resolved = calendarDateInSaoPaulo(ticket.resolvedAt);
+  return Boolean(opened && resolved && opened === resolved);
+}
+
 function percentileNearestRank(values: number[], percentile: number): number | null {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -84,14 +106,15 @@ function median(values: number[]): number | null {
 }
 
 export function calculateResolutionStats(tickets: ExecutiveTicketInput[]) {
-  const durations = tickets
+  const resolvedTickets = tickets.filter((ticket) => durationSeconds(ticket) !== null);
+  const durations = resolvedTickets
     .map(durationSeconds)
     .filter((value): value is number => value !== null);
   const total = durations.length;
   const day = 86_400;
   return {
     resolvedWithDuration: total,
-    sameDayPct: total ? Math.round((durations.filter((seconds) => seconds <= day).length / total) * 100) : 0,
+    sameDayPct: total ? Math.round((resolvedTickets.filter(resolvedSameCalendarDay).length / total) * 100) : 0,
     within3DaysPct: total ? Math.round((durations.filter((seconds) => seconds <= 3 * day).length / total) * 100) : 0,
     medianSeconds: median(durations),
     averageSeconds: total ? Math.round(durations.reduce((sum, value) => sum + value, 0) / total) : null,
