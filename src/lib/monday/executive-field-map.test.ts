@@ -55,17 +55,20 @@ test('marca Category única e semanticamente compatível como provável', () => 
   assert.equal(category?.columnId, 'category_x');
 });
 
-test('não escolhe automaticamente quando há candidatos ambíguos', () => {
+test('não escolhe automaticamente a segunda atualização quando há candidatos ambíguos', () => {
   const map = buildExecutiveFieldMap([
     col('update_a', 'Atualização do chamado', 'text'),
     col('update_b', 'Atualização do chamado', 'long_text'),
   ]);
-  const ambiguous = map.filter(
-    (entry) => entry.excelField === 'Atualização do chamado' && entry.status === 'ambiguous',
+  const ambiguous = map.find(
+    (entry) =>
+      entry.excelField === 'Atualização do chamado' &&
+      entry.internalField === null &&
+      entry.status === 'ambiguous',
   );
-  assert.equal(ambiguous.length, 1);
-  assert.equal(ambiguous[0]?.columnId, null);
-  assert.deepEqual(ambiguous[0]?.candidates.map((candidate) => candidate.id), ['update_a', 'update_b']);
+  assert.ok(ambiguous);
+  assert.equal(ambiguous.columnId, null);
+  assert.deepEqual(ambiguous.candidates.map((candidate) => candidate.id), ['update_a', 'update_b']);
 });
 
 test('Nome e Item ID são confirmados como metadados sem column ID', () => {
