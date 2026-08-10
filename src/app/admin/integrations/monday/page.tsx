@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
@@ -57,9 +58,14 @@ export default async function MondayIntegrationPage() {
             O Supabase é a fonte de verdade. Esta integração mantém o Monday atualizado, recebe webhooks e reconcilia os dados sem Google Apps Script, Sheets ou Drive.
           </p>
         </div>
-        <span className={`tag ${syncDisabled ? '' : 'tag--success'}`}>
-          {syncDisabled ? 'Configuração pendente' : 'Integração pronta'}
-        </span>
+        <div className="page-heading__actions">
+          <Link className="button button--ghost" href="/admin/integrations/monday/schema">
+            Explorar estrutura do Monday
+          </Link>
+          <span className={`tag ${syncDisabled ? '' : 'tag--success'}`}>
+            {syncDisabled ? 'Configuração pendente' : 'Integração pronta'}
+          </span>
+        </div>
       </section>
 
       <section className="metrics-grid" aria-label="Resumo da integração">
