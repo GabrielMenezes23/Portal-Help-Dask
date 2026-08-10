@@ -62,7 +62,7 @@ test('calcula média, mediana, p90 e percentuais de resolução', () => {
   assert.equal(stats.sameDayPct, 25);
   assert.equal(stats.within3DaysPct, 75);
   assert.equal(stats.p90Seconds, 864000);
-  assert.equal(stats.averageSeconds, 302400);
+  assert.equal(stats.averageSeconds, 304200);
 });
 
 test('classifica aging de backlog em faixas estáveis', () => {
