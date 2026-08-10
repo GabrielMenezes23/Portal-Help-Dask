@@ -1,4 +1,4 @@
-import { normalizeSchemaText, type MondaySchemaColumnRecord } from './schema-domain';
+import { normalizeSchemaText, type MondaySchemaColumnRecord } from './schema-domain.ts';
 
 export const EXECUTIVE_EXCEL_FIELDS = [
   'Nome',
@@ -147,7 +147,6 @@ export function buildExecutiveFieldMap(
       }
     }
 
-    // Fields represented by item metadata rather than a board column are intentionally unmapped.
     if (['title', 'monday_item_id'].includes(definition.internalField || '')) {
       return {
         excelIndex,
@@ -166,7 +165,6 @@ export function buildExecutiveFieldMap(
       (column) => normalizeSchemaText(column.title) === normalizedTitle && compatible(column, definition),
     );
 
-    // If the visible title differs slightly (e.g. accents/case), semantic classification can still suggest it.
     if (candidates.length === 0 && definition.expectedSemantic) {
       candidates = columns.filter((column) => compatible(column, definition));
     }
