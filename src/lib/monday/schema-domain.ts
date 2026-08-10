@@ -34,25 +34,6 @@ export type MondaySchemaColumn = {
   archived: boolean;
 };
 
-export type MondaySchemaColumnRecord = MondaySchemaColumn & {
-  boardId: string;
-};
-
-export type MondaySchemaRelation = {
-  sourceBoardId: string;
-  sourceColumnId: string;
-  targetBoardId: string;
-  relationType: string;
-};
-
-export type MondaySchemaSnapshot = {
-  workspaces: MondaySchemaWorkspace[];
-  boards: Array<MondaySchemaBoard & { priority: boolean; priorityReason: string }>;
-  groups: MondaySchemaGroup[];
-  columns: MondaySchemaColumnRecord[];
-  relations: MondaySchemaRelation[];
-};
-
 export type MondaySemanticHint =
   | 'category'
   | 'tags'
@@ -73,6 +54,26 @@ export type MondaySemanticHint =
   | 'request_type'
   | 'root_cause'
   | 'unknown';
+
+export type MondaySchemaColumnRecord = MondaySchemaColumn & {
+  boardId: string;
+  semanticHint?: MondaySemanticHint;
+};
+
+export type MondaySchemaRelation = {
+  sourceBoardId: string;
+  sourceColumnId: string;
+  targetBoardId: string;
+  relationType: string;
+};
+
+export type MondaySchemaSnapshot = {
+  workspaces: MondaySchemaWorkspace[];
+  boards: Array<MondaySchemaBoard & { priority: boolean; priorityReason: string }>;
+  groups: MondaySchemaGroup[];
+  columns: MondaySchemaColumnRecord[];
+  relations: MondaySchemaRelation[];
+};
 
 export function normalizeSchemaText(value: unknown): string {
   return String(value ?? '')
@@ -114,7 +115,6 @@ export function classifySemanticHint(column: MondaySchemaColumn): MondaySemantic
   if (type === 'email') return 'email';
   if (type === 'files' || type === 'file') return 'file';
 
-  // Títulos específicos prevalecem sobre tipos genéricos/relacionais.
   if (title.includes('hardware')) return 'hardware';
   if (title.includes('software')) return 'software';
   if (title.includes('incidente')) return 'incident';
