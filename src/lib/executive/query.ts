@@ -172,7 +172,7 @@ async function loadTickets(period: ExecutivePeriod): Promise<ExecutiveTicket[]> 
 
     const { data, error } = await query;
     if (error) throw new Error(`Não foi possível carregar o Painel Executivo: ${error.message}`);
-    const rows = (data || []) as TicketRow[];
+    const rows = (data || []) as unknown as TicketRow[];
     output.push(...rows.map(mapTicket));
     if (rows.length < pageSize) break;
   }
