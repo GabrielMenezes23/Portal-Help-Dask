@@ -12,19 +12,35 @@ export const MONDAY_COLUMN_IDS = {
   resolvedAt: 'date6',
   description: 'long_text7',
   responsible: 'people0',
+  responsibleText: 'text_mky2g5f9',
   status: 'status95',
   priority: 'priority',
   priorityJustification: 'long_textzr7lt7g8',
   requestType: 'request_type',
   rootCause: 'long_text_mkx84r4n',
   currentUpdate: 'text_mm0qa8s9',
+  secondaryUpdate: 'text_mm03gt7h',
   requesterName: 'dropdown_mky7rgr1',
+  requesterNameText: 'text',
+  category: 'color_mky7e9gb',
+  tags: 'tag_mkxckwr6',
+  supplierTicket: 'text_mm13vc8a',
+  supplierLink: 'link_mm129mxs',
+  workTime: 'duration_mkx84qkj',
+  openTime: 'duration_mky1bm3m',
+  hardwareIssue: 'text_mky7mt6k',
+  softwareIssue: 'text_mky78j9s',
+  incidentRelation: 'connect_boards2',
+  serviceSubtype: 'single_selectlqa52kw',
   legacyFiles: 'file_mm12mh4c',
-  userReply: 'long_text_mm12wpxe',
   userFiles: 'file4t50hmgx',
+  requestFiles: 'file7nrte5gu',
+  duplicateRequestFiles: 'filee09d9aft',
+  genericFile: 'filenlou89rv',
+  userReply: 'long_text_mm12wpxe',
 } as const;
 
-export const MONDAY_COLUMN_ID_LIST = Object.values(MONDAY_COLUMN_IDS);
+export const MONDAY_COLUMN_ID_LIST = [...new Set(Object.values(MONDAY_COLUMN_IDS))];
 export const MONDAY_GROUP_ID_LIST = Object.keys(MONDAY_GROUPS);
 
 export type TicketStatusBucket = 'open' | 'in_progress' | 'resolved' | 'cancelled';
@@ -35,6 +51,7 @@ export type MondayColumnValue = {
   text: string | null;
   value: string | null;
   type?: string | null;
+  duration?: number | null;
 };
 
 export type MondayItem = {
@@ -70,14 +87,28 @@ export type TicketUpsert = {
   priority_raw: string;
   priority_key: TicketPriorityKey;
   requester_name: string;
+  requester_name_text: string;
   requester_email: string;
   responsible_name: string;
+  responsible_text: string;
   request_type: string;
+  service_subtype: string;
   priority_justification: string;
   root_cause: string;
   current_update: string;
+  secondary_update: string;
   description: string;
   user_reply_raw: string;
+  category: string;
+  tags_raw: string;
+  tags: string[];
+  supplier_ticket: string;
+  supplier_link: string;
+  work_time_seconds: number;
+  open_time_seconds: number;
+  hardware_issue: string;
+  software_issue: string;
+  incident_relation: string;
   opened_at: string | null;
   resolved_at: string | null;
   source_created_at: string | null;
@@ -206,10 +237,51 @@ function columnText(
   return '';
 }
 
+function columnUrl(
+  columns: Map<string, MondayColumnValue>,
+  id: string,
+): string {
+  const column = columns.get(id);
+  const parsed = column ? parseColumnValue(column) : null;
+  if (parsed && typeof parsed === 'object') {
+    const url = (parsed as Record<string, unknown>).url;
+    if (typeof url === 'string' && url.trim()) return url.trim();
+  }
+  const direct = String(column?.text ?? '').trim();
+  return /^https?:\/\//i.test(direct) ? direct : '';
+}
+
+function columnDuration(
+  columns: Map<string, MondayColumnValue>,
+  id: string,
+): number {
+  const raw = columns.get(id)?.duration;
+  return typeof raw === 'number' && Number.isFinite(raw) && raw > 0
+    ? Math.floor(raw)
+    : 0;
+}
+
+function splitTags(value: string): string[] {
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const raw of value.split(/[,;]+/)) {
+    const tag = raw.trim();
+    if (!tag) continue;
+    const key = normalized(tag);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    tags.push(tag);
+  }
+  return tags;
+}
+
 export function extractAssetIds(columns: MondayColumnValue[]): string[] {
   const allowed = new Set<string>([
     MONDAY_COLUMN_IDS.legacyFiles,
     MONDAY_COLUMN_IDS.userFiles,
+    MONDAY_COLUMN_IDS.requestFiles,
+    MONDAY_COLUMN_IDS.duplicateRequestFiles,
+    MONDAY_COLUMN_IDS.genericFile,
   ]);
   const ids = new Set<string>();
 
@@ -248,6 +320,7 @@ export function mapMondayItem(
     'Grupo não identificado';
   const statusRaw = columnText(columns, MONDAY_COLUMN_IDS.status);
   const priorityRaw = columnText(columns, MONDAY_COLUMN_IDS.priority);
+  const tagsRaw = columnText(columns, MONDAY_COLUMN_IDS.tags);
   const timestamp = syncedAt.toISOString();
 
   return {
@@ -262,17 +335,31 @@ export function mapMondayItem(
       priority_raw: priorityRaw,
       priority_key: normalizePriority(priorityRaw),
       requester_name: columnText(columns, MONDAY_COLUMN_IDS.requesterName),
+      requester_name_text: columnText(columns, MONDAY_COLUMN_IDS.requesterNameText),
       requester_email: columnText(columns, MONDAY_COLUMN_IDS.email).toLowerCase(),
       responsible_name: columnText(columns, MONDAY_COLUMN_IDS.responsible),
+      responsible_text: columnText(columns, MONDAY_COLUMN_IDS.responsibleText),
       request_type: columnText(columns, MONDAY_COLUMN_IDS.requestType),
+      service_subtype: columnText(columns, MONDAY_COLUMN_IDS.serviceSubtype),
       priority_justification: columnText(
         columns,
         MONDAY_COLUMN_IDS.priorityJustification,
       ),
       root_cause: columnText(columns, MONDAY_COLUMN_IDS.rootCause),
       current_update: columnText(columns, MONDAY_COLUMN_IDS.currentUpdate),
+      secondary_update: columnText(columns, MONDAY_COLUMN_IDS.secondaryUpdate),
       description: columnText(columns, MONDAY_COLUMN_IDS.description),
       user_reply_raw: columnText(columns, MONDAY_COLUMN_IDS.userReply),
+      category: columnText(columns, MONDAY_COLUMN_IDS.category),
+      tags_raw: tagsRaw,
+      tags: splitTags(tagsRaw),
+      supplier_ticket: columnText(columns, MONDAY_COLUMN_IDS.supplierTicket),
+      supplier_link: columnUrl(columns, MONDAY_COLUMN_IDS.supplierLink),
+      work_time_seconds: columnDuration(columns, MONDAY_COLUMN_IDS.workTime),
+      open_time_seconds: columnDuration(columns, MONDAY_COLUMN_IDS.openTime),
+      hardware_issue: columnText(columns, MONDAY_COLUMN_IDS.hardwareIssue),
+      software_issue: columnText(columns, MONDAY_COLUMN_IDS.softwareIssue),
+      incident_relation: columnText(columns, MONDAY_COLUMN_IDS.incidentRelation),
       opened_at:
         parseMondayDate(columnText(columns, MONDAY_COLUMN_IDS.openedAt)) ??
         parseMondayDate(item.created_at),

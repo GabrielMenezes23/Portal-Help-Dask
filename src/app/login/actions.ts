@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 
+import { resolveMicrosoftOAuthOrigin } from '@/lib/auth/microsoft-auth';
 import { createClient } from '@/lib/supabase/server';
 
 function readField(formData: FormData, name: string): string {
@@ -10,7 +11,7 @@ function readField(formData: FormData, name: string): string {
 }
 
 export async function loginWithMicrosoft() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const appUrl = resolveMicrosoftOAuthOrigin();
 
   if (!appUrl) {
     redirect('/login?error=configuration');

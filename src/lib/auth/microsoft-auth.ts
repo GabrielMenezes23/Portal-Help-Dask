@@ -36,6 +36,22 @@ export function sanitizePostLoginPath(
   return candidate;
 }
 
+export function resolveMicrosoftOAuthOrigin(
+  source: Record<string, string | undefined> = process.env,
+): string {
+  if (source.VERCEL_ENV?.trim() === 'preview') {
+    const previewHost = source.VERCEL_URL?.trim()
+      .replace(/^https?:\/\//i, '')
+      .replace(/\/+$/, '');
+
+    if (previewHost) {
+      return `https://${previewHost}`;
+    }
+  }
+
+  return source.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '') ?? '';
+}
+
 export function readAllowedMicrosoftEmailDomains(
   source: Record<string, string | undefined> = process.env,
 ): string[] {

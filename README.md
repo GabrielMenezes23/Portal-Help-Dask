@@ -51,6 +51,42 @@ O Supabase registra primeiro os chamados, comentários e anexos. Se o Monday est
 - webhooks incrementais;
 - cron de reconciliação.
 
+## Monday Schema Explorer
+
+O Helpdesk possui um inventário read-only da estrutura do Monday em `/admin/integrations/monday/schema`.
+
+O Explorer consulta a Monday GraphQL API somente no servidor e mantém o inventário operacional restrito ao board configurado em `MONDAY_BOARD_ID` — atualmente **Tickets (`18389222247`)** — mais eventuais boards ligados diretamente a ele por uma coluna `board_relation`.
+
+O catálogo persistido no Supabase inclui:
+
+- workspace do board operacional;
+- board Tickets e eventual destino de relação direta;
+- grupos;
+- colunas, IDs, tipos e `settings`;
+- relações diretas encontradas;
+- classificação semântica de campos relevantes ao Helpdesk e ao Painel Executivo.
+
+A visualização é restrita à equipe de TI. Somente `admin` pode disparar uma atualização manual. O cron `/api/cron/monday-schema` executa diariamente às 09:00 UTC (06:00 em `America/Sao_Paulo`). Se a descoberta falhar, o último inventário válido permanece ativo.
+
+A homologação de 10/08/2026 confirmou para o board Tickets: **1 workspace, 1 board, 5 grupos, 35 colunas e 0 relações diretas ativas**. Uma exploração inicial ampla da conta foi preservada apenas para auditoria com `source_active=false` e não faz mais parte do inventário operacional.
+
+O arquivo Excel de tickets é usado apenas como referência de homologação. Seus 36 campos correspondem a 35 colunas reais do board mais o metadado `Item ID (auto generated)`. O mapa executivo usa IDs confirmados pela API, incluindo campos duplicados visualmente como `Atualização do chamado` e `Responsável`, evitando dependência de títulos.
+
+Entre os IDs confirmados estão:
+
+```text
+Category                         color_mky7e9gb
+Tags                             tag_mkxckwr6
+Controle tempo Tickets criado    duration_mkx84qkj
+Controle tempo tickets aberto    duration_mky1bm3m
+N° do chamado Fornecedor         text_mm13vc8a
+Link dos chamados                link_mm129mxs
+Hardware Issue                   text_mky7mt6k
+Software Service Issue           text_mky78j9s
+Incidentes                       connect_boards2
+Seleção individual               single_selectlqa52kw
+```
+
 ## Segurança
 
 - Row Level Security em todas as tabelas públicas;
@@ -82,7 +118,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\setup.ps1
 ```
 
-Preencha `.env.local` e aplique as três migrations:
+Preencha `.env.local` e aplique as migrations:
 
 ```powershell
 .\scripts\apply-migrations.ps1 -ProjectRef SEU_PROJECT_REF
