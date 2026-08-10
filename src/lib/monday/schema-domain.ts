@@ -106,6 +106,20 @@ export function parseBoardRelationTargets(column: MondaySchemaColumn): string[] 
   return values;
 }
 
+export function selectDirectSchemaBoardIds(
+  mainBoardId: string,
+  relations: MondaySchemaRelation[],
+): string[] {
+  const normalizedMain = String(mainBoardId);
+  const ids = new Set<string>([normalizedMain]);
+  for (const relation of relations) {
+    if (String(relation.sourceBoardId) !== normalizedMain) continue;
+    const target = String(relation.targetBoardId || '').trim();
+    if (target) ids.add(target);
+  }
+  return [...ids];
+}
+
 export function classifySemanticHint(column: MondaySchemaColumn): MondaySemanticHint {
   const type = normalizeSchemaText(column.type).replace(/ /g, '_');
   const title = normalizeSchemaText(column.title);
