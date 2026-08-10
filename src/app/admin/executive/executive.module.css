@@ -1,0 +1,283 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.tabs,
+.periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tab,
+.period {
+  min-height: 38px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted-strong);
+  background: rgba(15, 23, 42, 0.45);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.active {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.metric {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.metric span,
+.metric small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.metric strong {
+  display: block;
+  margin: 7px 0 5px;
+  font-size: clamp(26px, 3vw, 40px);
+  letter-spacing: -0.045em;
+}
+
+.panel {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.panel p {
+  margin: 6px 0 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.bars {
+  display: grid;
+  gap: 12px;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(120px, 2fr) 52px;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted-strong);
+  font-size: 12px;
+}
+
+.barRow > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+}
+
+.barRow strong {
+  text-align: right;
+  color: var(--text);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.split > div {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(7, 11, 23, 0.35);
+}
+
+.split span,
+.split small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.split strong {
+  display: block;
+  margin: 7px 0;
+  font-size: 28px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.table td {
+  color: var(--muted-strong);
+}
+
+.table td strong {
+  color: var(--text);
+}
+
+.weekRow {
+  display: grid;
+  grid-template-columns: 90px 1fr 1fr 70px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.shareBar {
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.shareBar i:first-child {
+  background: var(--success);
+}
+
+.shareBar i:last-child {
+  background: var(--accent);
+}
+
+.notice {
+  padding: 18px;
+  border: 1px solid rgba(248, 199, 109, 0.28);
+  border-radius: 14px;
+  color: var(--muted-strong);
+  background: rgba(248, 199, 109, 0.06);
+  line-height: 1.55;
+}
+
+.notice strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--warning);
+}
+
+.good {
+  color: var(--success) !important;
+}
+
+.warn {
+  color: var(--warning) !important;
+}
+
+.danger {
+  color: var(--danger) !important;
+}
+
+.caption {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1100px) {
+  .grid4,
+  .grid3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .grid4,
+  .grid3,
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .barRow {
+    grid-template-columns: minmax(90px, 1fr) minmax(90px, 1.5fr) 42px;
+  }
+
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .tabs,
+  .periods {
+    width: 100%;
+  }
+}

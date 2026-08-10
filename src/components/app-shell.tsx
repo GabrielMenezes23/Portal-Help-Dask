@@ -6,7 +6,7 @@ import type { AppRole } from '@/lib/auth/roles';
 
 import { BrandMark } from './brand-mark';
 
-type ActivePage = 'overview' | 'tickets' | 'new' | 'admin' | 'adminTickets' | 'users' | 'sla' | 'audit' | 'integration';
+type ActivePage = 'overview' | 'tickets' | 'new' | 'admin' | 'executive' | 'adminTickets' | 'users' | 'sla' | 'audit' | 'integration';
 
 type AppShellProps = {
   children: ReactNode;
@@ -51,6 +51,7 @@ export function AppShell({ children, active, user }: AppShellProps) {
             <>
               <span className="nav-section-label">Operação TI</span>
               {link('/admin', 'admin', '◇', 'Dashboard TI')}
+              {link('/admin/executive', 'executive', '◈', 'Painel Executivo')}
               {link('/admin/tickets', 'adminTickets', '▤', 'Gerenciar chamados')}
             </>
           )}
@@ -79,7 +80,7 @@ export function AppShell({ children, active, user }: AppShellProps) {
             <summary>Menu</summary>
             <div className="mobile-menu__panel">
               <Link href="/app">Visão geral</Link><Link href="/app/tickets">Chamados</Link><Link href="/app/tickets/new">Novo chamado</Link>
-              {support && <><Link href="/admin">Dashboard TI</Link><Link href="/admin/tickets">Gerenciar</Link></>}
+              {support && <><Link href="/admin">Dashboard TI</Link><Link href="/admin/executive">Painel Executivo</Link><Link href="/admin/tickets">Gerenciar</Link></>}
               {admin && <><Link href="/admin/users">Usuários</Link><Link href="/admin/audit">Auditoria</Link><Link href="/admin/integrations/monday">Monday</Link></>}
               <form action={logout}><button type="submit">Sair</button></form>
             </div>
