@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 
 import { AppShell } from '@/components/app-shell';
 import { requireSupport } from '@/lib/auth/current-user';
-import { formatDuration } from '@/lib/executive/analytics';
+import { formatDuration, inferTicketOrigin } from '@/lib/executive/analytics';
 import {
   EXECUTIVE_PERIODS,
   getExecutiveDashboard,
