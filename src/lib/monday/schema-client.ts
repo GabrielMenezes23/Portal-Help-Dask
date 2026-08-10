@@ -4,6 +4,7 @@ import { mondayRequest } from './client';
 import {
   classifyPriorityBoard,
   parseBoardRelationTargets,
+  selectDirectSchemaBoardIds,
   type MondaySchemaBoard,
   type MondaySchemaColumn,
   type MondaySchemaColumnRecord,
@@ -24,20 +25,6 @@ const WORKSPACES_QUERY = `
       description
       kind
       state
-    }
-  }
-`;
-
-const BOARDS_QUERY = `
-  query SchemaBoards($limit: Int!, $page: Int!) {
-    boards(limit: $limit, page: $page, state: all) {
-      id
-      name
-      board_kind
-      state
-      url
-      updated_at
-      workspace_id
     }
   }
 `;
@@ -160,20 +147,6 @@ export async function fetchMondayWorkspaces(): Promise<MondaySchemaWorkspace[]> 
   return uniqueById(result);
 }
 
-export async function fetchMondayBoards(): Promise<MondaySchemaBoard[]> {
-  const result: MondaySchemaBoard[] = [];
-  for (let page = 1; ; page += 1) {
-    const data = await mondayRequest<{ boards: RawBoard[] }>(BOARDS_QUERY, {
-      limit: PAGE_SIZE,
-      page,
-    });
-    const rows = data.boards || [];
-    result.push(...rows.map(mapBoard));
-    if (rows.length < PAGE_SIZE) break;
-  }
-  return uniqueById(result);
-}
-
 export async function fetchMondayBoardStructures(
   boardIds: string[],
 ): Promise<Array<{ board: MondaySchemaBoard; groups: MondaySchemaGroup[]; columns: MondaySchemaColumn[] }>> {
@@ -222,22 +195,10 @@ export async function resolveMondayRelationTargets(columnId: string): Promise<st
   return [...new Set((data.connection_board_ids || []).map(String).filter(Boolean))];
 }
 
-export async function fetchMondaySchemaSnapshot(mainBoardId: string): Promise<MondaySchemaSnapshot> {
-  const [workspaces, listedBoards] = await Promise.all([
-    fetchMondayWorkspaces(),
-    fetchMondayBoards(),
-  ]);
-  const structures = await fetchMondayBoardStructures(listedBoards.map((board) => board.id));
-  const structureById = new Map(structures.map((entry) => [entry.board.id, entry]));
-
-  // Prefer the detailed board object when available, while retaining boards that may not
-  // return structure due to account-level differences.
-  const boards = listedBoards.map((board) => structureById.get(board.id)?.board || board);
-  const groups: MondaySchemaGroup[] = structures.flatMap((entry) => entry.groups);
-  const columns: MondaySchemaColumnRecord[] = structures.flatMap((entry) =>
-    entry.columns.map((column) => ({ ...column, boardId: entry.board.id })),
-  );
-
+async function directRelationsFromMainBoard(
+  mainBoardId: string,
+  columns: MondaySchemaColumn[],
+): Promise<MondaySchemaRelation[]> {
   const relations: MondaySchemaRelation[] = [];
   for (const column of columns) {
     if (column.type !== 'board_relation') continue;
@@ -247,7 +208,7 @@ export async function fetchMondaySchemaSnapshot(mainBoardId: string): Promise<Mo
     }
     for (const targetBoardId of targets) {
       relations.push({
-        sourceBoardId: column.boardId,
+        sourceBoardId: mainBoardId,
         sourceColumnId: column.id,
         targetBoardId,
         relationType: column.type,
@@ -255,22 +216,51 @@ export async function fetchMondaySchemaSnapshot(mainBoardId: string): Promise<Mo
     }
   }
 
-  const uniqueRelations = new Map<string, MondaySchemaRelation>();
+  const unique = new Map<string, MondaySchemaRelation>();
   for (const relation of relations) {
     const key = `${relation.sourceBoardId}:${relation.sourceColumnId}:${relation.targetBoardId}`;
-    uniqueRelations.set(key, relation);
+    unique.set(key, relation);
   }
-  const relationRows = [...uniqueRelations.values()];
-  const relatedIds = new Set(relationRows.flatMap((relation) => [relation.sourceBoardId, relation.targetBoardId]));
+  return [...unique.values()];
+}
+
+export async function fetchMondaySchemaSnapshot(mainBoardId: string): Promise<MondaySchemaSnapshot> {
+  const mainStructures = await fetchMondayBoardStructures([mainBoardId]);
+  const main = mainStructures.find((entry) => entry.board.id === String(mainBoardId));
+  if (!main) {
+    throw new Error(`Board principal ${mainBoardId} não foi encontrado ou não está acessível.`);
+  }
+
+  const relations = await directRelationsFromMainBoard(main.board.id, main.columns);
+  const scopedBoardIds = selectDirectSchemaBoardIds(main.board.id, relations);
+  const targetBoardIds = scopedBoardIds.filter((id) => id !== main.board.id);
+  const targetStructures = targetBoardIds.length > 0
+    ? await fetchMondayBoardStructures(targetBoardIds)
+    : [];
+  const structures = [main, ...targetStructures];
+
+  const boards = uniqueById(structures.map((entry) => entry.board));
+  const relevantWorkspaceIds = new Set(
+    boards.map((board) => board.workspaceId).filter((value): value is string => Boolean(value)),
+  );
+  const workspaces = (await fetchMondayWorkspaces()).filter((workspace) =>
+    relevantWorkspaceIds.has(workspace.id),
+  );
+
+  const groups: MondaySchemaGroup[] = structures.flatMap((entry) => entry.groups);
+  const columns: MondaySchemaColumnRecord[] = structures.flatMap((entry) =>
+    entry.columns.map((column) => ({ ...column, boardId: entry.board.id })),
+  );
+  const relatedIds = new Set(targetBoardIds);
 
   return {
     workspaces,
     boards: boards.map((board) => {
-      const classification = classifyPriorityBoard(board, mainBoardId, relatedIds);
+      const classification = classifyPriorityBoard(board, main.board.id, relatedIds);
       return { ...board, priority: classification.priority, priorityReason: classification.reason };
     }),
     groups,
     columns,
-    relations: relationRows,
+    relations,
   };
 }
