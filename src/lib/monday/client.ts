@@ -37,7 +37,13 @@ const FIRST_PAGE_QUERY = `
           created_at
           updated_at
           group { id title }
-          column_values(ids: $columnIds) { id text value type }
+          column_values(ids: $columnIds) {
+            id
+            text
+            value
+            type
+            ... on TimeTrackingValue { duration }
+          }
         }
       }
     }
@@ -58,7 +64,13 @@ const NEXT_PAGE_QUERY = `
         created_at
         updated_at
         group { id title }
-        column_values(ids: $columnIds) { id text value type }
+        column_values(ids: $columnIds) {
+          id
+          text
+          value
+          type
+          ... on TimeTrackingValue { duration }
+        }
       }
     }
   }
@@ -221,7 +233,6 @@ export async function fetchMondaySnapshot(): Promise<MondaySnapshot> {
   return { boardId, items, assets };
 }
 
-
 const SINGLE_ITEM_QUERY = `
   query SingleItem($itemIds: [ID!]!, $columnIds: [String!]) {
     items(ids: $itemIds) {
@@ -230,7 +241,13 @@ const SINGLE_ITEM_QUERY = `
       created_at
       updated_at
       group { id title }
-      column_values(ids: $columnIds) { id text value type }
+      column_values(ids: $columnIds) {
+        id
+        text
+        value
+        type
+        ... on TimeTrackingValue { duration }
+      }
     }
   }
 `;
@@ -429,7 +446,6 @@ export async function uploadMondayFile(input: {
   }
   return String(envelope.data.add_file_to_column.id);
 }
-
 
 const CHANGE_MULTIPLE_COLUMNS_MUTATION = `
   mutation ChangeMultipleColumns($boardId: ID!, $itemId: ID!, $columnValues: JSON!) {
