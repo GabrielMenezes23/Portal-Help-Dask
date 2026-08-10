@@ -51,6 +51,23 @@ O Supabase registra primeiro os chamados, comentários e anexos. Se o Monday est
 - webhooks incrementais;
 - cron de reconciliação.
 
+## Monday Schema Explorer
+
+O Helpdesk possui um inventário read-only da estrutura do Monday em `/admin/integrations/monday/schema`.
+
+O Explorer consulta a Monday GraphQL API somente no servidor e cataloga no Supabase:
+
+- workspaces acessíveis;
+- boards e seus IDs;
+- grupos;
+- colunas, IDs, tipos e `settings`;
+- relações entre boards;
+- classificação semântica de campos relevantes ao Helpdesk e ao futuro Painel Executivo.
+
+A visualização é restrita à equipe de TI. Somente `admin` pode disparar uma atualização manual. O cron `/api/cron/monday-schema` executa diariamente às 09:00 UTC (06:00 em `America/Sao_Paulo`). Se a descoberta falhar, o último inventário válido permanece ativo.
+
+O arquivo Excel de tickets é usado apenas como referência de homologação. O mapa executivo compara os 36 campos da exportação com os IDs descobertos pela API e com o modelo atual do Supabase; mapeamentos `probable` ou `ambiguous` nunca entram automaticamente no pipeline operacional.
+
 ## Segurança
 
 - Row Level Security em todas as tabelas públicas;
