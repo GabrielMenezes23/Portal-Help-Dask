@@ -15,6 +15,7 @@ import {
   commentDedupeMarker,
   markedMondayFileName,
   mondayAttachmentMarker,
+  mondayManagedStatusLabel,
 } from './write-model';
 
 const MONDAY_API_URL = 'https://api.monday.com/v2';
@@ -464,17 +465,11 @@ export async function updateMondayTicketFields(input: {
   currentUpdate: string;
 }): Promise<void> {
   const { boardId } = readMondayWriteEnv();
-  const statusLabels = {
-    open: 'Aberto',
-    in_progress: 'Em andamento',
-    resolved: 'Resolvido',
-    cancelled: 'Cancelado',
-  } as const;
   await mondayRequest(CHANGE_MULTIPLE_COLUMNS_MUTATION, {
     boardId,
     itemId: input.itemId,
     columnValues: JSON.stringify({
-      status95: { label: statusLabels[input.status] },
+      status95: { label: mondayManagedStatusLabel(input.status) },
       long_text_mkx84r4n: { text: input.rootCause },
       text_mm0qa8s9: input.currentUpdate,
       date6: input.status === 'resolved'
