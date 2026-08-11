@@ -18,6 +18,7 @@ test('monta colunas do Monday sem credenciais e com justificativa', () => {
     text: 'usuario@cafmaquinas.com.br',
   });
   assert.deepEqual(values.priority, { label: 'Alta' });
+  assert.deepEqual(values.status95, { label: 'Novo' });
   assert.deepEqual(values.long_textzr7lt7g8, { text: 'Expedição parada' });
   assert.equal(JSON.stringify(values).includes('token'), false);
 });
@@ -85,6 +86,6 @@ test('marca o nome do anexo para reenvio idempotente', () => {
   assert.equal(mondayAttachmentMarker(id), `CAF-ATTACHMENT-${id}`);
   assert.equal(
     markedMondayFileName(id, 'evidência final.pdf'),
-    `CAF-ATTACHMENT-${id}--evidência final.pdf`,
+    `CAF-ATTACHMENT-${id}--${'evidência final.pdf'}`,
   );
 });
