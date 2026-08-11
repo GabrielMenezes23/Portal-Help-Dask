@@ -46,7 +46,10 @@ export function ExecutiveCsvButton({ tickets }: { tickets: ExecutiveTicket[] }) 
     URL.revokeObjectURL(url);
   }
 
-  return <button className={styles.actionButton} type="button" onClick={download}>Exportar CSV</button>;
+  return <>
+    <button className={styles.actionButton} type="button" onClick={download}>Exportar CSV</button>
+    <ExecutivePrintButton />
+  </>;
 }
 
 export function ExecutivePrintButton() {
