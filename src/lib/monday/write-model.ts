@@ -23,7 +23,7 @@ export function buildCreateItemColumnValues(input: MondayCreateValuesInput): Rec
     long_text7: { text: input.description },
     priority: { label: PRIORITY_LABELS[input.priority] },
     request_type: { labels: [input.requestType] },
-    status95: { label: 'Aberto' },
+    status95: { label: 'Novo' },
   };
 
   if (input.justification) {
