@@ -86,6 +86,6 @@ test('marca o nome do anexo para reenvio idempotente', () => {
   assert.equal(mondayAttachmentMarker(id), `CAF-ATTACHMENT-${id}`);
   assert.equal(
     markedMondayFileName(id, 'evidência final.pdf'),
-    `CAF-ATTACHMENT-${id}--${'evidência final.pdf'}`,
+    `CAF-ATTACHMENT-${id}--evidência final.pdf`,
   );
 });
