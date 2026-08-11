@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import * as writeModel from './write-model.ts';
 import { appendUniqueMondayText, buildCreateItemColumnValues, formatPortalCommentBlock, pendingTicketSyncMode, shouldUpdateMondayTicketFields, mondayAttachmentMarker, markedMondayFileName } from './write-model.ts';
 
 test('monta colunas do Monday sem credenciais e com justificativa', () => {
@@ -21,6 +22,16 @@ test('monta colunas do Monday sem credenciais e com justificativa', () => {
   assert.deepEqual(values.status95, { label: 'Novo' });
   assert.deepEqual(values.long_textzr7lt7g8, { text: 'Expedição parada' });
   assert.equal(JSON.stringify(values).includes('token'), false);
+});
+
+test('traduz estados internos para rótulos reais do Monday', () => {
+  const mapper = (writeModel as Record<string, unknown>).mondayManagedStatusLabel;
+  assert.equal(typeof mapper, 'function');
+  const label = mapper as (status: string) => string;
+  assert.equal(label('open'), 'Novo');
+  assert.equal(label('in_progress'), 'Em andamento');
+  assert.equal(label('resolved'), 'Resolvido');
+  assert.equal(label('cancelled'), 'Cancelado');
 });
 
 test('formata comentário com autor e data', () => {

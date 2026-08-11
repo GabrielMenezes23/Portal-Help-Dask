@@ -16,6 +16,19 @@ export type MondayCreateValuesInput = {
   justification: string;
 };
 
+export type MondayManagedStatus = 'open' | 'in_progress' | 'resolved' | 'cancelled';
+
+const MONDAY_STATUS_LABELS: Record<MondayManagedStatus, string> = {
+  open: 'Novo',
+  in_progress: 'Em andamento',
+  resolved: 'Resolvido',
+  cancelled: 'Cancelado',
+};
+
+export function mondayManagedStatusLabel(status: MondayManagedStatus): string {
+  return MONDAY_STATUS_LABELS[status];
+}
+
 export function buildCreateItemColumnValues(input: MondayCreateValuesInput): Record<string, unknown> {
   const values: Record<string, unknown> = {
     email: { email: input.email, text: input.email },
@@ -23,7 +36,7 @@ export function buildCreateItemColumnValues(input: MondayCreateValuesInput): Rec
     long_text7: { text: input.description },
     priority: { label: PRIORITY_LABELS[input.priority] },
     request_type: { labels: [input.requestType] },
-    status95: { label: 'Novo' },
+    status95: { label: mondayManagedStatusLabel('open') },
   };
 
   if (input.justification) {
@@ -32,9 +45,6 @@ export function buildCreateItemColumnValues(input: MondayCreateValuesInput): Rec
 
   return values;
 }
-
-
-export type MondayManagedStatus = 'open' | 'in_progress' | 'resolved' | 'cancelled';
 
 export function pendingTicketSyncMode(
   mondayItemId: string | null | undefined,
