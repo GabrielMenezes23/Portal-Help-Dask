@@ -49,6 +49,10 @@ export function ExecutiveCsvButton({ tickets }: { tickets: ExecutiveTicket[] }) 
   return <button className={styles.actionButton} type="button" onClick={download}>Exportar CSV</button>;
 }
 
+export function ExecutivePrintButton() {
+  return <button className={styles.actionButton} type="button" onClick={() => window.print()}>Relatório PDF</button>;
+}
+
 export function TicketDetailButton({ ticket }: { ticket: ExecutiveTicket }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
