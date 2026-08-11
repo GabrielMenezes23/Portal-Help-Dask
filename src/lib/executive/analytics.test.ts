@@ -5,7 +5,10 @@ import {
   agingBucket,
   buildWeeklyOriginSeries,
   calculateResolutionStats,
+  cycleBucket,
   inferTicketOrigin,
+  isDependencyStatus,
+  ticketAgeDays,
   type ExecutiveTicketInput,
 } from './analytics.ts';
 
@@ -73,6 +76,26 @@ test('classifica aging de backlog em faixas estáveis', () => {
   assert.equal(agingBucket('2026-07-30T12:00:00Z', now), '8-14 dias');
   assert.equal(agingBucket('2026-07-20T12:00:00Z', now), '15-30 dias');
   assert.equal(agingBucket('2026-06-01T12:00:00Z', now), '>30 dias');
+});
+
+test('calcula idade inteira e identifica estados de dependência', () => {
+  const now = new Date('2026-08-10T12:00:00Z');
+  assert.equal(ticketAgeDays('2026-08-01T13:00:00Z', now), 8);
+  assert.equal(ticketAgeDays(null, now), null);
+  assert.equal(isDependencyStatus('Bloqueado'), true);
+  assert.equal(isDependencyStatus('Aguardando fornecedor'), true);
+  assert.equal(isDependencyStatus('Pendente usuário'), true);
+  assert.equal(isDependencyStatus('Em andamento'), false);
+  assert.equal(isDependencyStatus('Resolvido'), false);
+});
+
+test('classifica distribuição de ciclo', () => {
+  assert.equal(cycleBucket(3600), 'Mesmo dia');
+  assert.equal(cycleBucket(86400), '1-3 dias');
+  assert.equal(cycleBucket(4 * 86400), '4-7 dias');
+  assert.equal(cycleBucket(10 * 86400), '8-14 dias');
+  assert.equal(cycleBucket(20 * 86400), '>14 dias');
+  assert.equal(cycleBucket(null), 'Sem duração');
 });
 
 test('agrupa participação semanal de usuários versus TI de segunda a domingo', () => {

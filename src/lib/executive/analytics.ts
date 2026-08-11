@@ -133,16 +133,58 @@ export const AGING_BUCKETS: AgingBucket[] = [
   '>30 dias',
 ];
 
-export function agingBucket(openedAt: string | null, now = new Date()): AgingBucket {
-  if (!openedAt) return '>30 dias';
+export function ticketAgeDays(openedAt: string | null, now = new Date()): number | null {
+  if (!openedAt) return null;
   const opened = new Date(openedAt).getTime();
-  const ageDays = Math.max(0, (now.getTime() - opened) / 86_400_000);
+  if (!Number.isFinite(opened)) return null;
+  return Math.max(0, Math.floor((now.getTime() - opened) / 86_400_000));
+}
+
+export function agingBucket(openedAt: string | null, now = new Date()): AgingBucket {
+  const ageDays = ticketAgeDays(openedAt, now);
+  if (ageDays == null) return '>30 dias';
   if (ageDays < 2) return '0-1 dia';
   if (ageDays < 4) return '2-3 dias';
   if (ageDays < 8) return '4-7 dias';
   if (ageDays < 15) return '8-14 dias';
   if (ageDays <= 30) return '15-30 dias';
   return '>30 dias';
+}
+
+function normalizeText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function isDependencyStatus(status: string): boolean {
+  const normalized = normalizeText(status);
+  if (!normalized) return false;
+  return [
+    'bloquead',
+    'aguard',
+    'pendente',
+    'espera',
+    'fornecedor',
+    'terceiro',
+    'usuario',
+    'cliente',
+  ].some((signal) => normalized.includes(signal));
+}
+
+export function cycleBucket(seconds: number | null): 'Mesmo dia' | '1-3 dias' | '4-7 dias' | '8-14 dias' | '>14 dias' | 'Sem duração' {
+  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return 'Sem duração';
+  if (seconds < 86_400) return 'Mesmo dia';
+  if (seconds <= 3 * 86_400) return '1-3 dias';
+  if (seconds <= 7 * 86_400) return '4-7 dias';
+  if (seconds <= 14 * 86_400) return '8-14 dias';
+  return '>14 dias';
+}
+
+export function ticketResolutionSeconds(ticket: ExecutiveTicketInput): number | null {
+  return durationSeconds(ticket);
 }
 
 function isoDateUtc(date: Date): string {
