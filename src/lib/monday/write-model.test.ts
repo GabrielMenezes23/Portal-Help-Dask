@@ -100,3 +100,18 @@ test('marca o nome do anexo para reenvio idempotente', () => {
     `CAF-ATTACHMENT-${id}--evidência final.pdf`,
   );
 });
+
+test('monta o multipart de arquivo no formato GraphQL exigido pelo Monday', () => {
+  const fields = writeModel.mondayFileUploadMultipartFields({
+    itemId: '12778255263',
+    columnId: 'file4t50hmgx',
+  });
+
+  assert.equal(fields.fileField, '0');
+  assert.deepEqual(JSON.parse(fields.map), { '0': ['variables.file'] });
+  assert.deepEqual(JSON.parse(fields.variables), {
+    itemId: '12778255263',
+    columnId: 'file4t50hmgx',
+    file: null,
+  });
+});

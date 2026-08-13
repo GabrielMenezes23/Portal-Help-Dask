@@ -15,6 +15,7 @@ import {
   commentDedupeMarker,
   markedMondayFileName,
   mondayAttachmentMarker,
+  mondayFileUploadMultipartFields,
   mondayManagedStatusLabel,
 } from './write-model';
 
@@ -418,11 +419,16 @@ export async function uploadMondayFile(input: {
       add_file_to_column(file: $file, item_id: $itemId, column_id: $columnId) { id }
     }
   `;
+  const multipartFields = mondayFileUploadMultipartFields({
+    itemId: input.itemId,
+    columnId: userFileColumnId,
+  });
   const form = new FormData();
   form.append('query', query);
-  form.append('variables', JSON.stringify({ itemId: input.itemId, columnId: userFileColumnId, file: null }));
+  form.append('variables', multipartFields.variables);
+  form.append('map', multipartFields.map);
   form.append(
-    'file',
+    multipartFields.fileField,
     new Blob([input.bytes], { type: input.mimeType || 'application/octet-stream' }),
     uploadName,
   );

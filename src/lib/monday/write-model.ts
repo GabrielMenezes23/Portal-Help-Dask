@@ -68,6 +68,25 @@ export function mondayAttachmentMarker(attachmentId: string): string {
   return `CAF-ATTACHMENT-${attachmentId}`;
 }
 
+export function mondayFileUploadMultipartFields(input: {
+  itemId: string;
+  columnId: string;
+}): {
+  fileField: '0';
+  map: string;
+  variables: string;
+} {
+  return {
+    fileField: '0',
+    map: JSON.stringify({ '0': ['variables.file'] }),
+    variables: JSON.stringify({
+      itemId: input.itemId,
+      columnId: input.columnId,
+      file: null,
+    }),
+  };
+}
+
 export function markedMondayFileName(
   attachmentId: string,
   originalName: string,
