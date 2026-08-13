@@ -464,6 +464,29 @@ const CHANGE_MULTIPLE_COLUMNS_MUTATION = `
   }
 `;
 
+const CHANGE_ITEM_NAME_MUTATION = `
+  mutation ChangeItemName($boardId: ID!, $itemId: ID!, $name: String!) {
+    change_simple_column_value(
+      board_id: $boardId
+      item_id: $itemId
+      column_id: "name"
+      value: $name
+    ) { id name }
+  }
+`;
+
+export async function renameMondayItem(input: {
+  itemId: string;
+  name: string;
+}): Promise<void> {
+  const { boardId } = readMondayWriteEnv();
+  await mondayRequest(CHANGE_ITEM_NAME_MUTATION, {
+    boardId,
+    itemId: input.itemId,
+    name: input.name,
+  });
+}
+
 export async function updateMondayTicketFields(input: {
   itemId: string;
   status: 'open' | 'in_progress' | 'resolved' | 'cancelled';
