@@ -8,7 +8,7 @@ import {
 } from '@/lib/tickets/opening-responsible';
 import { listTickets } from '@/lib/tickets/query';
 import { createPortalTicket } from '@/lib/tickets/service';
-import { validateNewTicketInput, validateUpload } from '@/lib/tickets/validation';
+import { validateNewTicketInput, validateUploads } from '@/lib/tickets/validation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -78,15 +78,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const fileValue = form.get('file');
-  const file = fileValue instanceof File && fileValue.size > 0 ? fileValue : null;
-  const fileValidation = validateUpload(file);
+  const files = form.getAll('file').filter(
+    (value): value is File => value instanceof File && value.size > 0,
+  );
+  const fileValidation = validateUploads(files);
   if (!fileValidation.ok) {
     return NextResponse.json({ ok: false, errors: fileValidation.errors }, { status: 400 });
   }
 
   try {
-    const result = await createPortalTicket({ actor: auth.actor, ticket: validation.value, file });
+    const result = await createPortalTicket({ actor: auth.actor, ticket: validation.value, files: fileValidation.value });
     const responsibleResult = await assignOpeningResponsible({
       ticketId: result.id,
       optionId: openingResponsible.optionId,

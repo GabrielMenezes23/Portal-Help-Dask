@@ -43,6 +43,8 @@ export const MONDAY_COLUMN_IDS = {
 export const MONDAY_COLUMN_ID_LIST = [...new Set(Object.values(MONDAY_COLUMN_IDS))];
 export const MONDAY_GROUP_ID_LIST = Object.keys(MONDAY_GROUPS);
 
+const PORTAL_REFERENCE_PREFIX = /^CAF-\d{8}-[A-Z0-9]{8}\s*[·•-]\s*/i;
+
 export type TicketStatusBucket = 'open' | 'in_progress' | 'resolved' | 'cancelled';
 export type TicketPriorityKey = 'critical' | 'high' | 'medium' | 'low' | 'unknown';
 
@@ -124,6 +126,11 @@ export type MappedMondayItem = {
   ticket: TicketUpsert;
   assetIds: string[];
 };
+
+export function stripPortalReferenceFromTitle(value: string): string {
+  const title = value.trim();
+  return title.replace(PORTAL_REFERENCE_PREFIX, '').trim() || title;
+}
 
 function normalized(value: unknown): string {
   return String(value ?? '')
@@ -327,7 +334,7 @@ export function mapMondayItem(
     ticket: {
       board_id: boardId,
       monday_item_id: String(item.id),
-      title: String(item.name ?? '').trim(),
+      title: stripPortalReferenceFromTitle(String(item.name ?? '')),
       group_external_id: groupId,
       group_name: groupName,
       status_raw: statusRaw,

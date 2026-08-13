@@ -130,12 +130,8 @@ async function createMondayForTicket(ticket: {
   const openedDate = new Date(ticket.opened_at).toLocaleDateString('en-CA', {
     timeZone: 'America/Sao_Paulo',
   });
-  const itemTitle = ticket.portal_reference
-    ? `${ticket.portal_reference} · ${ticket.title}`
-    : ticket.title;
-
   const created = await createMondayItem({
-    title: itemTitle,
+    title: ticket.title,
     columnValues: buildCreateItemColumnValues({
       email: ticket.requester_email,
       openedDate,
@@ -165,7 +161,7 @@ async function createMondayForTicket(ticket: {
 export async function createPortalTicket(input: {
   actor: ApiActor;
   ticket: ValidNewTicket;
-  file?: File | null;
+  files?: File[];
 }) {
   const supabase = createAdminClient();
   const now = new Date();
@@ -237,13 +233,13 @@ export async function createPortalTicket(input: {
   }
 
   let attachmentError: string | null = null;
-  if (input.file && input.file.size > 0) {
+  if (input.files?.length) {
     try {
       const commentResult = await addPortalComment({
         actor: input.actor,
         ticketId: String(data.id),
         message: 'Anexo enviado na abertura do chamado.',
-        file: input.file,
+        files: input.files,
       });
       attachmentError = commentResult.attachmentError;
     } catch (cause) {
@@ -328,20 +324,27 @@ async function storeAttachment(input: {
     throw new Error(`Não foi possível registrar o arquivo: ${error.message}`);
   }
 
-  return { id: String(data.id), bytes, path };
+  return {
+    id: String(data.id),
+    bytes,
+    path,
+    fileName: input.file.name,
+    mimeType: input.file.type || 'application/octet-stream',
+  };
 }
 
 export async function addPortalComment(input: {
   actor: ApiActor;
   ticketId: string;
   message: string;
-  file?: File | null;
+  files?: File[];
 }) {
   const ticket = await canAccessTicket(input.actor, input.ticketId);
   if (!ticket) throw new Error('Chamado não encontrado ou sem permissão.');
 
   const supabase = createAdminClient();
-  const hasFile = Boolean(input.file && input.file.size > 0);
+  const files = (input.files || []).filter((file) => file.size > 0);
+  const hasFile = files.length > 0;
   const { data: comment, error: commentError } = await supabase
     .from('ticket_comments')
     .insert({
@@ -362,27 +365,41 @@ export async function addPortalComment(input: {
     );
   }
 
-  let attachment: Awaited<ReturnType<typeof storeAttachment>> | null = null;
-  let attachmentError: string | null = null;
-  if (input.file && input.file.size > 0) {
+  const attachments: Array<Awaited<ReturnType<typeof storeAttachment>>> = [];
+  const attachmentErrors: string[] = [];
+  for (const file of files) {
     try {
-      attachment = await storeAttachment({
-        actor: input.actor,
-        ticketId: input.ticketId,
-        commentId: String(comment.id),
-        file: input.file,
-      });
+      attachments.push(
+        await storeAttachment({
+          actor: input.actor,
+          ticketId: input.ticketId,
+          commentId: String(comment.id),
+          file,
+        }),
+      );
     } catch (cause) {
-      attachmentError = safeError(cause);
-      if (!input.message.trim()) {
-        await supabase.from('ticket_comments').delete().eq('id', comment.id);
-        throw new Error(attachmentError);
-      }
+      attachmentErrors.push(`${file.name}: ${safeError(cause)}`);
     }
+  }
+  const attachmentError = attachmentErrors.length
+    ? attachmentErrors.join('; ').slice(0, 1500)
+    : null;
+  if (attachmentErrors.length && !input.message.trim()) {
+    if (attachments.length > 0) {
+      await supabase.storage
+        .from(STORAGE_BUCKET)
+        .remove(attachments.map((attachment) => attachment.path));
+      await supabase
+        .from('ticket_attachments')
+        .delete()
+        .in('id', attachments.map((attachment) => attachment.id));
+    }
+    await supabase.from('ticket_comments').delete().eq('id', comment.id);
+    throw new Error(attachmentError || 'Não foi possível armazenar os anexos.');
   }
 
   let commentSyncError: string | null = null;
-  let attachmentSyncError: string | null = null;
+  const attachmentSyncErrors: string[] = [];
 
   if (ticket.monday_item_id) {
     try {
@@ -416,12 +433,12 @@ export async function addPortalComment(input: {
         .eq('id', comment.id);
     }
 
-    if (attachment && input.file) {
+    for (const attachment of attachments) {
       try {
         const assetId = await uploadMondayFile({
           itemId: String(ticket.monday_item_id),
-          fileName: input.file.name,
-          mimeType: input.file.type,
+          fileName: attachment.fileName,
+          mimeType: attachment.mimeType,
           bytes: attachment.bytes,
           attachmentId: attachment.id,
         });
@@ -435,12 +452,13 @@ export async function addPortalComment(input: {
           })
           .eq('id', attachment.id);
       } catch (cause) {
-        attachmentSyncError = safeError(cause);
+        const error = safeError(cause);
+        attachmentSyncErrors.push(`${attachment.fileName}: ${error}`);
         await supabase
           .from('ticket_attachments')
           .update({
             monday_sync_status: 'failed',
-            monday_sync_error: attachmentSyncError,
+            monday_sync_error: error,
           })
           .eq('id', attachment.id);
       }
@@ -463,13 +481,15 @@ export async function addPortalComment(input: {
       has_file: hasFile,
       attachment_error: attachmentError,
       monday_comment_error: commentSyncError,
-      monday_attachment_error: attachmentSyncError,
+      monday_attachment_error: attachmentSyncErrors.length
+        ? attachmentSyncErrors.join('; ').slice(0, 1500)
+        : null,
     },
   });
 
   return {
     id: String(comment.id),
-    syncError: commentSyncError || attachmentSyncError,
+    syncError: commentSyncError || attachmentSyncErrors.join('; ') || attachmentError,
     attachmentError,
   };
 }

@@ -6,6 +6,7 @@ import {
   validateCommentInput,
   validateNewTicketInput,
   validateUpload,
+  validateUploads,
 } from './validation.ts';
 
 test('prioridade crítica exige justificativa', () => {
@@ -50,6 +51,16 @@ test('upload bloqueia extensões executáveis mesmo com MIME genérico', () => {
   const result = validateUpload(file);
   assert.equal(result.ok, false);
   if (!result.ok) assert.match(result.errors.file ?? '', /não é permitido/i);
+});
+
+test('valida vários anexos no mesmo envio', () => {
+  const result = validateUploads([
+    new File(['um'], 'um.txt', { type: 'text/plain' }),
+    new File(['dois'], 'dois.txt', { type: 'text/plain' }),
+  ]);
+
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.value.length, 2);
 });
 
 
