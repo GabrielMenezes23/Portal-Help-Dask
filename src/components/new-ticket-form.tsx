@@ -263,7 +263,7 @@ export function NewTicketForm({
           <label className={styles.upload}>
             <span>
               Escolha um arquivo ou arraste e solte aqui
-              <input name="file" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" />
+              <input name="file" type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" />
               <small>Máximo de 8 MB.</small>
             </span>
           </label>

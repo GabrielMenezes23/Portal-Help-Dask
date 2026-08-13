@@ -22,7 +22,7 @@ export function CommentForm({ ticketId }: { ticketId: string }) {
     <form className="comment-form" onSubmit={submit}>
       {error && <div className="form-alert" role="alert">{error}</div>}
       <textarea name="message" value={message} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setMessage(event.target.value)} rows={4} maxLength={6000} placeholder="Adicione uma informação, dúvida ou retorno para a TI." />
-      <div className="comment-form__actions"><input name="file" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" /><button className="button button--primary" disabled={busy} type="submit">{busy ? 'Enviando…' : 'Enviar comentário'}</button></div>
+      <div className="comment-form__actions"><input name="file" type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip" /><button className="button button--primary" disabled={busy} type="submit">{busy ? 'Enviando…' : 'Enviar comentário'}</button></div>
     </form>
   );
 }

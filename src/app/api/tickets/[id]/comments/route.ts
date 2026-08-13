@@ -4,7 +4,7 @@ import { authorizeActiveApi } from '@/lib/auth/api-authorization';
 import { createMondayUpdateForPortalComment } from '@/lib/monday/update-sync';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { addPortalComment } from '@/lib/tickets/service';
-import { validateCommentInput, validateUpload } from '@/lib/tickets/validation';
+import { validateCommentInput, validateUploads } from '@/lib/tickets/validation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,16 +20,17 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   }
   const { id } = await context.params;
   const form = await request.formData();
-  const fileValue = form.get('file');
-  const file = fileValue instanceof File && fileValue.size > 0 ? fileValue : null;
+  const files = form.getAll('file').filter(
+    (value): value is File => value instanceof File && value.size > 0,
+  );
   const validation = validateCommentInput({
     message: String(form.get('message') || ''),
-    hasFile: Boolean(file),
+    hasFile: files.length > 0,
   });
   if (!validation.ok) {
     return NextResponse.json({ ok: false, errors: validation.errors }, { status: 400 });
   }
-  const fileValidation = validateUpload(file);
+  const fileValidation = validateUploads(files);
   if (!fileValidation.ok) {
     return NextResponse.json({ ok: false, errors: fileValidation.errors }, { status: 400 });
   }
@@ -39,7 +40,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       actor: auth.actor,
       ticketId: id,
       message: validation.value.message,
-      file,
+      files: fileValidation.value,
     });
     const mondayUpdate = await createMondayUpdateForPortalComment({
       ticketId: id,

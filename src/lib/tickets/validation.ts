@@ -92,3 +92,16 @@ export function validateUpload(file: File | null, maxBytes = 8 * 1024 * 1024): V
   }
   return { ok: true, value: file };
 }
+
+export function validateUploads(
+  files: File[],
+  maxBytes = 8 * 1024 * 1024,
+): ValidationResult<File[]> {
+  const validFiles: File[] = [];
+  for (const file of files) {
+    const result = validateUpload(file, maxBytes);
+    if (!result.ok) return result;
+    if (result.value) validFiles.push(result.value);
+  }
+  return { ok: true, value: validFiles };
+}

@@ -7,8 +7,17 @@ import {
   normalizePriority,
   normalizeStatusBucket,
   parseMondayDate,
+  stripPortalReferenceFromTitle,
   type MondayItem,
 } from './domain.ts';
+
+test('remove protocolo técnico do título sincronizado', () => {
+  assert.equal(
+    stripPortalReferenceFromTitle('CAF-20260813-66B0CD0C · WMS - XML A INTEGRAR'),
+    'WMS - XML A INTEGRAR',
+  );
+  assert.equal(stripPortalReferenceFromTitle('Título sem protocolo'), 'Título sem protocolo');
+});
 
 test('classifies cancelled tickets without falling back to open', () => {
   assert.equal(normalizeStatusBucket('Cancelado', 'group_mkyss0vv'), 'cancelled');
