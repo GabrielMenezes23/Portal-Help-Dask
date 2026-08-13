@@ -8,9 +8,11 @@ import { readPortalTicketDefaults } from '@/lib/env/server-env';
 import {
   appendMondayUserReply,
   createMondayItem,
+  renameMondayItem,
   updateMondayTicketFields,
   uploadMondayFile,
 } from '@/lib/monday/client';
+import { stripPortalReferenceFromTitle } from '@/lib/monday/domain';
 import {
   buildCreateItemColumnValues,
   formatPortalCommentBlock,
@@ -503,6 +505,40 @@ export async function retryPendingMondaySync(
   const supabase = createAdminClient();
   const safeLimit = Math.min(100, Math.max(1, limit));
   const results = { tickets: 0, comments: 0, attachments: 0, failures: 0 };
+
+  const { data: portalTickets, error: portalTicketError } = await supabase
+    .from('tickets')
+    .select('id,monday_item_id,title')
+    .eq('source_system', 'portal')
+    .eq('source_active', true)
+    .not('monday_item_id', 'is', null)
+    .order('created_at', { ascending: true })
+    .limit(safeLimit);
+  if (portalTicketError) throw new Error(portalTicketError.message);
+
+  for (const ticket of portalTickets || []) {
+    const title = stripPortalReferenceFromTitle(String(ticket.title || ''));
+    if (!ticket.monday_item_id || !title || title === ticket.title) continue;
+    try {
+      await renameMondayItem({
+        itemId: String(ticket.monday_item_id),
+        name: title,
+      });
+      await supabase
+        .from('tickets')
+        .update({ title })
+        .eq('id', ticket.id);
+    } catch (cause) {
+      results.failures += 1;
+      await supabase
+        .from('tickets')
+        .update({
+          external_sync_status: 'failed',
+          external_sync_error: safeError(cause),
+        })
+        .eq('id', ticket.id);
+    }
+  }
 
   const { data: pendingTickets, error: pendingTicketError } = await supabase
     .from('tickets')
