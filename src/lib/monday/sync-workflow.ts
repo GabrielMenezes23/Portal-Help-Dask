@@ -17,6 +17,7 @@ export type PersistSnapshotResult = {
   ticketsUpserted: number;
   attachmentsUpserted: number;
   ticketIds?: string[];
+  newTicketIds?: string[];
 };
 
 export type DeactivateMissingResult = {

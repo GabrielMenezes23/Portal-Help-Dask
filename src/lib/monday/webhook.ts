@@ -70,5 +70,18 @@ export function isRemovalEvent(eventType: string): boolean {
 }
 
 export function isCommentEvent(eventType: string): boolean {
-  return eventType.trim().toLowerCase().includes('update');
+  return [
+    'create_update',
+    'create_update_reply',
+    'create_reply',
+    'change_update',
+    'update_update',
+    'update_reply',
+  ].includes(eventType.trim().toLowerCase());
+}
+
+export function isTicketCreatedEvent(eventType: string): boolean {
+  return ['create_pulse', 'create_item', 'item_created'].includes(
+    eventType.trim().toLowerCase(),
+  );
 }

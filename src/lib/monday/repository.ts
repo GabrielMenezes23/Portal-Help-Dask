@@ -76,6 +76,20 @@ export class MondaySyncRepository {
       mapMondayItem(item, snapshot.boardId, runId, syncedAt),
     );
     const ticketIds = new Map<string, string>();
+    const existingMondayItemIds = new Set<string>();
+
+    for (const batch of chunks(mapped, FILTER_BATCH_SIZE)) {
+      const { data, error } = await this.supabase
+        .from('tickets')
+        .select('monday_item_id')
+        .eq('board_id', snapshot.boardId)
+        .in('monday_item_id', batch.map((entry) => entry.ticket.monday_item_id));
+
+      if (error) throw databaseError('Falha ao identificar novos tickets', error);
+      for (const row of data || []) {
+        existingMondayItemIds.add(String(row.monday_item_id));
+      }
+    }
 
     for (const batch of chunks(mapped, UPSERT_BATCH_SIZE)) {
       const { data, error } = await this.supabase
@@ -113,6 +127,10 @@ export class MondaySyncRepository {
       ticketsUpserted: mapped.length,
       attachmentsUpserted: attachmentRows.length,
       ticketIds: [...ticketIds.values()],
+      newTicketIds: mapped
+        .filter((entry) => !existingMondayItemIds.has(entry.ticket.monday_item_id))
+        .map((entry) => ticketIds.get(entry.ticket.monday_item_id))
+        .filter((ticketId): ticketId is string => Boolean(ticketId)),
     };
   }
 
