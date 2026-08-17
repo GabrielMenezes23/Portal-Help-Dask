@@ -20,6 +20,11 @@ import {
   shouldUpdateMondayTicketFields,
 } from '@/lib/monday/write-model';
 import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  notifyCommentCreated,
+  notifyTicketCreated,
+  retryPendingNotifications,
+} from '@/lib/notifications/service';
 
 import { addBusinessMinutes } from './sla';
 import { getSlaPolicy, loadSlaConfiguration } from './sla-config';
@@ -38,6 +43,7 @@ type TicketAccessRow = {
   monday_item_id: string | null;
   requester_user_id: string | null;
   requester_email: string;
+  requester_name: string;
   title: string;
   description: string;
   priority_key: ValidNewTicket['priority'];
@@ -75,7 +81,7 @@ async function canAccessTicket(
   const { data, error } = await supabase
     .from('tickets')
     .select(
-      'id,monday_item_id,requester_user_id,requester_email,title,description,priority_key,priority_justification,request_type,opened_at,portal_reference',
+      'id,monday_item_id,requester_user_id,requester_email,requester_name,title,description,priority_key,priority_justification,request_type,opened_at,portal_reference',
     )
     .eq('id', ticketId)
     .maybeSingle();
@@ -242,6 +248,7 @@ export async function createPortalTicket(input: {
         ticketId: String(data.id),
         message: 'Anexo enviado na abertura do chamado.',
         files: input.files,
+        notify: false,
       });
       attachmentError = commentResult.attachmentError;
     } catch (cause) {
@@ -262,6 +269,23 @@ export async function createPortalTicket(input: {
       attachment_error: attachmentError,
     },
   });
+
+  try {
+    await notifyTicketCreated({
+      actor: input.actor,
+      ticket: {
+        id: String(data.id),
+        reference,
+        title: String(data.title),
+        description: String(data.description),
+        requesterEmail: String(data.requester_email),
+        requesterName: String(input.actor.fullName || ''),
+      },
+      attachmentCount: input.files?.length || 0,
+    });
+  } catch (cause) {
+    console.error('Falha ao notificar abertura do chamado.', safeError(cause));
+  }
 
   return {
     id: String(data.id),
@@ -340,6 +364,7 @@ export async function addPortalComment(input: {
   ticketId: string;
   message: string;
   files?: File[];
+  notify?: boolean;
 }) {
   const ticket = await canAccessTicket(input.actor, input.ticketId);
   if (!ticket) throw new Error('Chamado não encontrado ou sem permissão.');
@@ -488,6 +513,27 @@ export async function addPortalComment(input: {
         : null,
     },
   });
+
+  if (input.notify !== false) {
+    try {
+      await notifyCommentCreated({
+        actor: input.actor,
+        ticket: {
+          id: input.ticketId,
+          reference: String(ticket.portal_reference || ticket.monday_item_id || input.ticketId),
+          title: ticket.title,
+          description: ticket.description,
+          requesterEmail: ticket.requester_email,
+          requesterName: ticket.requester_name || null,
+        },
+        commentId: String(comment.id),
+        message: input.message,
+        attachmentCount: attachments.length,
+      });
+    } catch (cause) {
+      console.error('Falha ao notificar novo comentário.', safeError(cause));
+    }
+  }
 
   return {
     id: String(comment.id),
@@ -692,7 +738,9 @@ export async function retryPendingMondaySync(
     metadata: results,
   });
 
-  return results;
+  const notifications = await retryPendingNotifications();
+
+  return { ...results, notifications };
 }
 
 export async function updateTicketManagement(input: {

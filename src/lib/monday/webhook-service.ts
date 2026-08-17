@@ -7,7 +7,7 @@ import { fetchMondayItemSnapshot } from './client';
 import { MondaySyncRepository } from './repository';
 import { syncMondayItemUpdates } from './update-sync';
 import type { ParsedMondayWebhook } from './webhook';
-import { isRemovalEvent, shouldRetryWebhookStatus } from './webhook';
+import { isCommentEvent, isRemovalEvent, shouldRetryWebhookStatus } from './webhook';
 
 type WebhookStatus = 'received' | 'processing' | 'processed' | 'ignored' | 'failed';
 
@@ -129,7 +129,9 @@ export async function processMondayWebhookEvent(
     );
     const snapshot = await fetchMondayItemSnapshot(event.itemId);
     const persisted = await repository.persistSnapshot(runId, snapshot);
-    const updates = await syncMondayItemUpdates(event.itemId);
+    const updates = await syncMondayItemUpdates(event.itemId, {
+      notifyExternalComments: isCommentEvent(event.eventType),
+    });
     const result = {
       runId,
       itemsReceived: snapshot.items.length,
