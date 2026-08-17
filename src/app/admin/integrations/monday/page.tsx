@@ -136,6 +136,8 @@ export default async function MondayIntegrationPage() {
               ['Grupo padrão', overview.configuration.mondayGroupConfigured],
               ['Segredo do webhook', overview.configuration.mondayWebhookSecretConfigured],
               ['Segredo do cron', overview.configuration.cronSecretConfigured],
+              ['API Resend', overview.configuration.resendApiKeyConfigured],
+              ['Remetente de notificações', overview.configuration.notificationFromConfigured],
             ].map(([label, configured]) => (
               <div key={String(label)}>
                 <span>{label}</span>

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { readMondayEnv } from '@/lib/env/server-env';
+import { notifyExternalCommentCreated } from '@/lib/notifications/service';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 import { mondayRequest } from './client';
@@ -146,7 +147,7 @@ export async function createMondayUpdateForPortalComment(input: {
 async function persistMondayComment(
   ticketId: string,
   comment: NormalizedMondayComment,
-): Promise<string> {
+): Promise<{ id: string; created: boolean }> {
   const supabase = createAdminClient();
   const portalCommentId = portalCommentMarkerId(comment.body);
   if (portalCommentId) {
@@ -168,7 +169,7 @@ async function persistMondayComment(
           source_updated_at: safeDate(comment.updatedAt),
         })
         .eq('id', portalCommentId);
-      return portalCommentId;
+      return { id: portalCommentId, created: false };
     }
   }
 
@@ -205,7 +206,7 @@ async function persistMondayComment(
       .select('id')
       .single();
     if (updated.error) throw new Error(updated.error.message);
-    return String(updated.data.id);
+    return { id: String(updated.data.id), created: false };
   }
 
   const inserted = await supabase
@@ -214,7 +215,7 @@ async function persistMondayComment(
     .select('id')
     .single();
   if (inserted.error) throw new Error(inserted.error.message);
-  return String(inserted.data.id);
+  return { id: String(inserted.data.id), created: true };
 }
 
 async function persistMondayAssets(
@@ -254,7 +255,10 @@ async function persistMondayAssets(
   return rows.length;
 }
 
-export async function syncMondayItemUpdates(itemId: string): Promise<{
+export async function syncMondayItemUpdates(
+  itemId: string,
+  options: { notifyExternalComments?: boolean } = {},
+): Promise<{
   comments: number;
   attachments: number;
 }> {
@@ -262,7 +266,7 @@ export async function syncMondayItemUpdates(itemId: string): Promise<{
   const supabase = createAdminClient();
   const ticket = await supabase
     .from('tickets')
-    .select('id')
+    .select('id,portal_reference,monday_item_id,title,description,requester_email,requester_name')
     .eq('board_id', boardId)
     .eq('monday_item_id', itemId)
     .maybeSingle();
@@ -273,8 +277,28 @@ export async function syncMondayItemUpdates(itemId: string): Promise<{
   const comments = flattenMondayUpdates(await fetchMondayItemUpdates(itemId));
   let attachmentCount = 0;
   for (const comment of comments) {
-    const commentId = await persistMondayComment(ticketId, comment);
-    attachmentCount += await persistMondayAssets(ticketId, commentId, comment);
+    const persistedComment = await persistMondayComment(ticketId, comment);
+    attachmentCount += await persistMondayAssets(ticketId, persistedComment.id, comment);
+    if (options.notifyExternalComments && persistedComment.created) {
+      try {
+        await notifyExternalCommentCreated({
+          ticket: {
+            id: ticketId,
+            reference: String(ticket.data.portal_reference || ticket.data.monday_item_id || ticketId),
+            title: String(ticket.data.title || ''),
+            description: String(ticket.data.description || ''),
+            requesterEmail: String(ticket.data.requester_email || ''),
+            requesterName: ticket.data.requester_name || null,
+          },
+          commentId: persistedComment.id,
+          authorName: comment.authorName,
+          message: comment.body,
+          attachmentCount: comment.assets.length,
+        });
+      } catch (cause) {
+        console.error('Falha ao notificar comentário recebido do Monday.', cause);
+      }
+    }
   }
 
   const currentUpdateIds = new Set(comments.map((comment) => comment.updateId));

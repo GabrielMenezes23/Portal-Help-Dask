@@ -30,6 +30,8 @@ export type ServerConfigurationStatus = {
   mondayGroupConfigured: boolean;
   mondayWebhookSecretConfigured: boolean;
   cronSecretConfigured: boolean;
+  resendApiKeyConfigured: boolean;
+  notificationFromConfigured: boolean;
 };
 
 function clean(value: string | undefined): string {
@@ -102,6 +104,23 @@ export function readCronSecret(source: EnvSource = process.env): string {
   return requireLongSecret('CRON_SECRET', clean(source.CRON_SECRET));
 }
 
+export type NotificationEnvironment = {
+  apiKey: string;
+  fromEmail: string;
+};
+
+export function readNotificationEnv(
+  source: EnvSource = process.env,
+): NotificationEnvironment {
+  const apiKey = clean(source.RESEND_API_KEY);
+  const fromEmail = clean(source.NOTIFICATION_FROM_EMAIL);
+  requireValues([
+    ['RESEND_API_KEY', apiKey],
+    ['NOTIFICATION_FROM_EMAIL', fromEmail],
+  ]);
+  return { apiKey, fromEmail };
+}
+
 export function readMondayWebhookSecret(source: EnvSource = process.env): string {
   return requireLongSecret(
     'MONDAY_WEBHOOK_SECRET',
@@ -120,5 +139,7 @@ export function getServerConfigurationStatus(source: EnvSource = process.env): S
     mondayGroupConfigured: Boolean(clean(source.MONDAY_DEFAULT_GROUP_ID) || 'topics'),
     mondayWebhookSecretConfigured: Boolean(clean(source.MONDAY_WEBHOOK_SECRET)),
     cronSecretConfigured: Boolean(clean(source.CRON_SECRET)),
+    resendApiKeyConfigured: Boolean(clean(source.RESEND_API_KEY)),
+    notificationFromConfigured: Boolean(clean(source.NOTIFICATION_FROM_EMAIL)),
   };
 }

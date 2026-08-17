@@ -68,3 +68,7 @@ export function isRemovalEvent(eventType: string): boolean {
     eventType.trim().toLowerCase(),
   );
 }
+
+export function isCommentEvent(eventType: string): boolean {
+  return eventType.trim().toLowerCase().includes('update');
+}

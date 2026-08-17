@@ -6,6 +6,7 @@ import {
   readCronSecret,
   readMondayEnv,
   readMondayWebhookSecret,
+  readNotificationEnv,
   readPortalTicketDefaults,
   readSupabaseAdminEnv,
 } from './server-env.ts';
@@ -48,6 +49,8 @@ test('reports configuration presence only', () => {
       mondayGroupConfigured: true,
       mondayWebhookSecretConfigured: false,
       cronSecretConfigured: true,
+      resendApiKeyConfigured: false,
+      notificationFromConfigured: false,
     },
   );
 });
@@ -72,4 +75,18 @@ test('exige segredos longos para cron e webhook', () => {
   assert.throws(() => readCronSecret({ CRON_SECRET: 'curto' }), /16 caracteres/i);
   assert.throws(() => readMondayWebhookSecret({ MONDAY_WEBHOOK_SECRET: 'curto' }), /16 caracteres/i);
   assert.equal(readCronSecret({ CRON_SECRET: '1234567890abcdef' }), '1234567890abcdef');
+});
+
+test('lê a configuração server-only do Resend', () => {
+  assert.deepEqual(
+    readNotificationEnv({
+      RESEND_API_KEY: ' re_test_key ',
+      NOTIFICATION_FROM_EMAIL: 'CAF TI <alertas@alertas.cafmaquinas.com.br>',
+    }),
+    {
+      apiKey: 're_test_key',
+      fromEmail: 'CAF TI <alertas@alertas.cafmaquinas.com.br>',
+    },
+  );
+  assert.throws(() => readNotificationEnv({ RESEND_API_KEY: 'key' }), /NOTIFICATION_FROM_EMAIL/);
 });
