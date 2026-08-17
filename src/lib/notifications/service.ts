@@ -264,6 +264,28 @@ export async function notifyTicketCreated(input: {
   })));
 }
 
+export async function notifyExternalTicketCreated(input: {
+  ticket: PortalTicketNotification;
+  attachmentCount: number;
+}): Promise<void> {
+  const recipients = await listSupportRecipients('');
+  const content = renderEmail({
+    eventType: 'ticket_created',
+    ticket: input.ticket,
+    actorEmail: input.ticket.requesterEmail || 'monday',
+    actorName: input.ticket.requesterName || 'Monday',
+    message: input.ticket.description,
+    attachmentCount: input.attachmentCount,
+  });
+  await enqueueAndDeliver(recipients.map((recipient) => ({
+    dedupeKey: `ticket-created:${input.ticket.id}:${recipient.email}`,
+    eventType: 'ticket_created',
+    ticketId: input.ticket.id,
+    recipient,
+    ...content,
+  })));
+}
+
 export async function notifyCommentCreated(input: {
   actor: ApiActor;
   ticket: PortalTicketNotification;

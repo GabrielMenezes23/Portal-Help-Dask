@@ -1,13 +1,19 @@
 import 'server-only';
 
 import { readMondayEnv } from '@/lib/env/server-env';
+import { notifyExternalTicketCreated } from '@/lib/notifications/service';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 import { fetchMondayItemSnapshot } from './client';
 import { MondaySyncRepository } from './repository';
 import { syncMondayItemUpdates } from './update-sync';
 import type { ParsedMondayWebhook } from './webhook';
-import { isCommentEvent, isRemovalEvent, shouldRetryWebhookStatus } from './webhook';
+import {
+  isCommentEvent,
+  isRemovalEvent,
+  isTicketCreatedEvent,
+  shouldRetryWebhookStatus,
+} from './webhook';
 
 type WebhookStatus = 'received' | 'processing' | 'processed' | 'ignored' | 'failed';
 
@@ -129,6 +135,32 @@ export async function processMondayWebhookEvent(
     );
     const snapshot = await fetchMondayItemSnapshot(event.itemId);
     const persisted = await repository.persistSnapshot(runId, snapshot);
+    if (isTicketCreatedEvent(event.eventType) && (persisted.newTicketIds || []).length > 0) {
+      const createdTickets = await supabase
+        .from('tickets')
+        .select('id,portal_reference,monday_item_id,title,description,requester_email,requester_name')
+        .in('id', persisted.newTicketIds || []);
+      if (createdTickets.error) {
+        throw new Error(`Falha ao carregar novos tickets para notificação: ${createdTickets.error.message}`);
+      }
+      for (const ticket of createdTickets.data || []) {
+        try {
+          await notifyExternalTicketCreated({
+            ticket: {
+              id: String(ticket.id),
+              reference: String(ticket.portal_reference || ticket.monday_item_id || ticket.id),
+              title: String(ticket.title || ''),
+              description: String(ticket.description || ''),
+              requesterEmail: String(ticket.requester_email || ''),
+              requesterName: ticket.requester_name || null,
+            },
+            attachmentCount: persisted.attachmentsUpserted,
+          });
+        } catch (cause) {
+          console.error('Falha ao notificar novo ticket recebido do Monday.', cause);
+        }
+      }
+    }
     const updates = await syncMondayItemUpdates(event.itemId, {
       notifyExternalComments: isCommentEvent(event.eventType),
     });
@@ -140,6 +172,7 @@ export async function processMondayWebhookEvent(
       ticketsDeactivated: 0,
       attachmentsDeactivated: 0,
       ticketIds: persisted.ticketIds,
+      newTicketIds: persisted.newTicketIds,
     };
     await repository.completeRun(runId, result);
 

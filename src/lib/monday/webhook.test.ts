@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parseMondayWebhook, shouldRetryWebhookStatus } from './webhook.ts';
+import {
+  isCommentEvent,
+  isTicketCreatedEvent,
+  parseMondayWebhook,
+  shouldRetryWebhookStatus,
+} from './webhook.ts';
 
 test('reconhece challenge de verificação', () => {
   const result = parseMondayWebhook({ challenge: 'abc123' });
@@ -61,4 +66,11 @@ test('gera deduplicação distinta quando o Monday não envia UUID', () => {
   if (first.kind === 'event' && second.kind === 'event') {
     assert.notEqual(first.dedupeKey, second.dedupeKey);
   }
+});
+
+test('separa eventos de comentário de alterações de coluna e criação de ticket', () => {
+  assert.equal(isCommentEvent('create_update'), true);
+  assert.equal(isCommentEvent('update_column_value'), false);
+  assert.equal(isTicketCreatedEvent('create_pulse'), true);
+  assert.equal(isTicketCreatedEvent('update_column_value'), false);
 });
