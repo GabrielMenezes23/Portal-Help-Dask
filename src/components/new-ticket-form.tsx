@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import styles from './new-ticket-form.module.css';
 
@@ -58,6 +58,7 @@ export function NewTicketForm({
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const submissionId = useRef<string | null>(null);
 
   const selectedResponsible = responsibleOptions.find(
     (option) => option.id === responsibleId,
@@ -74,6 +75,8 @@ export function NewTicketForm({
     setError('');
 
     const form = new FormData(event.currentTarget);
+    submissionId.current ||= crypto.randomUUID();
+    form.set('submissionId', submissionId.current);
     form.set('requestType', normalizedRequestType);
     form.set('openingResponsibleOptionId', responsibleId);
     form.set('openingResponsibleName', selectedResponsible?.label || '');

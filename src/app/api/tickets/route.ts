@@ -87,7 +87,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await createPortalTicket({ actor: auth.actor, ticket: validation.value, files: fileValidation.value });
+    const result = await createPortalTicket({
+      actor: auth.actor,
+      ticket: validation.value,
+      files: fileValidation.value,
+      requestId: String(form.get('submissionId') || '').trim() || undefined,
+    });
     const responsibleResult = await assignOpeningResponsible({
       ticketId: result.id,
       optionId: openingResponsible.optionId,
