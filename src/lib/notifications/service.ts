@@ -1,5 +1,9 @@
 import 'server-only';
 
+import {
+  emailBelongsToAllowedDomain,
+  readAllowedMicrosoftEmailDomains,
+} from '@/lib/auth/microsoft-auth';
 import type { ApiActor } from '@/lib/auth/api-authorization';
 import { readNotificationEnv } from '@/lib/env/server-env';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -121,6 +125,7 @@ function renderEmail(input: {
 
 async function listSupportRecipients(actorEmail: string): Promise<NotificationRecipient[]> {
   const supabase = createAdminClient();
+  const allowedDomains = readAllowedMicrosoftEmailDomains();
   const { data, error } = await supabase
     .from('profiles')
     .select('email,full_name')
@@ -130,7 +135,11 @@ async function listSupportRecipients(actorEmail: string): Promise<NotificationRe
   if (error) throw new Error(`Falha ao carregar destinatários de notificação: ${error.message}`);
   return (data || [])
     .map((profile) => ({ email: clean(profile.email).toLowerCase(), name: profile.full_name || null }))
-    .filter((profile) => profile.email && profile.email !== actorEmail.toLowerCase());
+    .filter((profile) =>
+      profile.email &&
+      emailBelongsToAllowedDomain(profile.email, allowedDomains) &&
+      profile.email !== actorEmail.toLowerCase(),
+    );
 }
 
 async function enqueueAndDeliver(drafts: NotificationDraft[]): Promise<void> {

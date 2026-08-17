@@ -170,6 +170,7 @@ export async function createPortalTicket(input: {
   actor: ApiActor;
   ticket: ValidNewTicket;
   files?: File[];
+  requestId?: string;
 }) {
   const supabase = createAdminClient();
   const now = new Date();
@@ -216,6 +217,7 @@ export async function createPortalTicket(input: {
       portal_reference: reference,
       created_by_user_id: input.actor.userId,
       external_sync_status: 'pending',
+      portal_request_id: input.requestId || null,
       last_activity_at: now.toISOString(),
       sla_deadline: deadline,
       sla_warning_minutes: slaPolicy?.warningMinutes ?? 120,
@@ -226,7 +228,26 @@ export async function createPortalTicket(input: {
     )
     .single();
 
-  if (error) throw new Error(`Não foi possível criar o chamado: ${error.message}`);
+  if (error) {
+    if (error.code === '23505' && input.requestId) {
+      const existing = await supabase
+        .from('tickets')
+        .select('id,portal_reference,external_sync_status,external_sync_error')
+        .eq('portal_request_id', input.requestId)
+        .eq('created_by_user_id', input.actor.userId)
+        .maybeSingle();
+      if (!existing.error && existing.data) {
+        return {
+          id: String(existing.data.id),
+          reference: String(existing.data.portal_reference || ''),
+          syncStatus: existing.data.external_sync_status === 'failed' ? 'failed' as const : 'synced' as const,
+          syncError: existing.data.external_sync_error,
+          attachmentError: null,
+        };
+      }
+    }
+    throw new Error(`Não foi possível criar o chamado: ${error.message}`);
+  }
 
   let syncStatus: 'synced' | 'failed' = 'synced';
   let syncError: string | null = null;
